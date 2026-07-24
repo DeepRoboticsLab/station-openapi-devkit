@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: station-openapi-sample-native-mq
+  main:
+    web-application-type: none
+
+station:
+  openapi:
+    native-mq:
+      enabled: ${STATION_NATIVE_MQ_ENABLED:false}
+      name-server: ${ROCKETMQ_NAME_SERVER:}
+      consumer-group: ${ROCKETMQ_NATIVE_CONSUMER_GROUP:}

@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: signature
+
+station:
+  openapi:
+    auth-mode: SIGNATURE
+    app-key: ${STATION_APP_KEY:}
+    secret-key: ${STATION_SECRET_KEY:}

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.deeprobotics.station.openapi</groupId>
+        <artifactId>station-openapi-devkit</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>station-openapi-sdk-rocketmq</artifactId>
+
+    <name>DeepRobotics Station OpenAPI SDK RocketMQ</name>
+    <description>Optional RocketMQ native-client integration for Station OpenAPI pushed messages.</description>
+
+    <dependencies>
+        <!-- MQ 是可选独立模块：复用 core 的 JSON/脱敏能力，但不进入默认 HTTP SDK artifact。 -->
+        <dependency>
+            <groupId>com.deeprobotics.station.openapi</groupId>
+            <artifactId>station-openapi-sdk-core</artifactId>
+        </dependency>
+        <!-- 使用 RocketMQ 原生 client，不依赖 Spring Boot starter，便于纯 Java 与 Spring Boot 共同接入。 -->
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 测试使用 nop binding，避免“无 SLF4J provider”提示干扰路由断言。 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

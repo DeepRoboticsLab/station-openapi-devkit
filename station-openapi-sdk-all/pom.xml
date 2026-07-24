@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.deeprobotics.station.openapi</groupId>
+        <artifactId>station-openapi-devkit</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>station-openapi-sdk-all</artifactId>
+
+    <name>DeepRobotics Station OpenAPI SDK All</name>
+    <description>Shaded fallback artifact for customer projects with OkHttp, Okio, or Kotlin dependency conflicts.</description>
+
+    <dependencies>
+        <!--
+            sdk-all 从默认聚合 artifact 构建完整 fat JAR。optional 只影响生成的依赖元数据，
+            不影响 shade 在 package 阶段把其类和传递依赖打入最终 JAR。
+        -->
+        <dependency>
+            <groupId>com.deeprobotics.station.openapi</groupId>
+            <artifactId>station-openapi-sdk</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- shade 会在同一生命周期重写主 artifact，强制重建基础 JAR 避免增量构建复用旧产物。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <forceCreation>true</forceCreation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>shade-conflict-prone-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+                            <!-- 只 relocation 最常见冲突链；Jackson/SLF4J 保持标准包名并一并打入 fat JAR。 -->
+                            <relocations>
+                                <relocation>
+                                    <pattern>okhttp3</pattern>
+                                    <shadedPattern>com.deeprobotics.station.openapi.shaded.okhttp3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>okio</pattern>
+                                    <shadedPattern>com.deeprobotics.station.openapi.shaded.okio</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>kotlin</pattern>
+                                    <shadedPattern>com.deeprobotics.station.openapi.shaded.kotlin</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <!-- 合并 META-INF/services，确保 relocation 后默认 HttpTransportProvider 仍可被 SPI 发现。 -->
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+                Failsafe 在 package 生成 shaded JAR 后，用隔离 ClassLoader 只加载最终产物，
+                验证 SPI 元数据和 relocated OkHttp/Okio/Kotlin 能独立运行。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>**/ShadedDefaultClientIT.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <station.openapi.shaded.jar>${project.build.directory}/${project.build.finalName}.jar</station.openapi.shaded.jar>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

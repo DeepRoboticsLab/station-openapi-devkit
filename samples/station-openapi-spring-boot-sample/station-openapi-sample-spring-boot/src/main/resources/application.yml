@@ -1,0 +1,27 @@
+spring:
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+  profiles:
+    active: token
+
+station:
+  openapi:
+    endpoint: ${STATION_ENDPOINT:}
+    connect-timeout: ${STATION_CONNECT_TIMEOUT:3s}
+    read-timeout: ${STATION_READ_TIMEOUT:10s}
+    call-timeout: ${STATION_CALL_TIMEOUT:15s}
+    mq:
+      enabled: ${STATION_MQ_ENABLED:false}
+      consumer-group: ${ROCKETMQ_STARTER_CONSUMER_GROUP:}
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:}
+
+sample:
+  dangerous-operations-enabled: ${SAMPLE_DANGEROUS_OPERATIONS_ENABLED:false}
+
+logging:
+  level:
+    org.apache.rocketmq.spring.support.DefaultRocketMQListenerContainer: INFO

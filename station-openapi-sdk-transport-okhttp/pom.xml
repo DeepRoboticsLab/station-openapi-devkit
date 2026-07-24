@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.deeprobotics.station.openapi</groupId>
+        <artifactId>station-openapi-devkit</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>station-openapi-sdk-transport-okhttp</artifactId>
+
+    <name>DeepRobotics Station OpenAPI SDK OkHttp Transport</name>
+    <description>OkHttp-based HTTP transport implementation for the Station OpenAPI SDK.</description>
+
+    <dependencies>
+        <!-- transport 通过 core 的 HttpTransport 契约接入，不让 okhttp3 类型泄露到 core 公共 API。 -->
+        <dependency>
+            <groupId>com.deeprobotics.station.openapi</groupId>
+            <artifactId>station-openapi-sdk-core</artifactId>
+        </dependency>
+        <!-- OkHttp 是默认 SDK 的真实运行时依赖，必须保持 compile scope，不能改成 provided。 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+
+        <!-- MockWebServer 仅用于本模块的离线 HTTP/流式下载测试。 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

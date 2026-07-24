@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.deeprobotics.station.openapi</groupId>
+        <artifactId>station-openapi-devkit</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>station-openapi-sdk</artifactId>
+
+    <name>DeepRobotics Station OpenAPI SDK</name>
+    <description>Default customer-facing Station OpenAPI SDK artifact with core API and OkHttp transport.</description>
+
+    <dependencies>
+        <!--
+            普通客户只依赖本 artifact；core 和 OkHttp transport 会作为传递依赖一起进入运行时，
+            从而让 StationOpenApiClients.builder().build() 能通过 SPI 开箱即用。
+        -->
+        <dependency>
+            <groupId>com.deeprobotics.station.openapi</groupId>
+            <artifactId>station-openapi-sdk-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.deeprobotics.station.openapi</groupId>
+            <artifactId>station-openapi-sdk-transport-okhttp</artifactId>
+        </dependency>
+
+        <!-- 聚合层测试从客户公共 API 出发验证默认 SPI 装配，不把测试库带给客户。 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

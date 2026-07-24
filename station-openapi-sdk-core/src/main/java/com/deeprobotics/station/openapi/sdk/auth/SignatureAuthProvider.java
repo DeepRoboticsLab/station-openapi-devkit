@@ -1,0 +1,139 @@
+package com.deeprobotics.station.openapi.sdk.auth;
+
+import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiAuthException;
+import com.deeprobotics.station.openapi.sdk.model.MapUtils;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * 签名模式鉴权实现。
+ *
+ * <p>签名模式请求 body 包含 {@code appKey/timestamp/nonce/sign}。
+ * secretKey 只参与 SDK 本地签名副本，绝不能进入最终 body、header、日志或异常。</p>
+ *
+ * <p>该类是重试安全的关键：每次 {@link #authenticate(Map)} 调用都会重新生成 timestamp/nonce/sign。
+ * executor 重试时必须重新调用这里，不能复用上一次已经发送过的 body。</p>
+ */
+public final class SignatureAuthProvider implements AuthProvider {
+
+    /**
+     * 签名模式凭证，必须包含 appKey 和 secretKey。
+     */
+    private final Credential credential;
+    /**
+     * 时间源。生产使用系统时间，测试可注入固定时间稳定签名向量。
+     */
+    private final SdkClock clock;
+    /**
+     * nonce 生成器。每次鉴权调用都生成新值，避免平台防重放校验拒绝重试请求。
+     */
+    private final NonceGenerator nonceGenerator;
+
+    /**
+     * 使用系统时间和安全随机 nonce 创建签名 provider。
+     *
+     * @param credential 必须是包含 appKey/secretKey 的签名凭证
+     */
+    public SignatureAuthProvider(Credential credential) {
+        this(credential, SdkClock.system(), NonceGenerator.secureRandom());
+    }
+
+    /**
+     * 使用指定时间源和 nonce 生成器创建签名 provider，主要用于确定性测试或受控运行环境。
+     *
+     * @param credential 签名模式凭证
+     * @param clock timestamp 时间源
+     * @param nonceGenerator 每次鉴权调用使用的一次性随机串生成器
+     */
+    public SignatureAuthProvider(Credential credential, SdkClock clock, NonceGenerator nonceGenerator) {
+        this.credential = requireCredential(credential);
+        this.clock = Objects.requireNonNull(clock, "clock is required");
+        this.nonceGenerator = Objects.requireNonNull(nonceGenerator, "nonceGenerator is required");
+    }
+
+    @Override
+    public AuthenticatedRequest authenticate(Map<String, Object> businessBody) {
+        // 复制业务 map 后再清理鉴权字段，避免客户误传 appKey/sign 时覆盖 SDK 生成值，也避免污染原始请求。
+        LinkedHashMap<String, Object> body = MapUtils.copyWithoutNulls(businessBody);
+        removeAuthFields(body);
+
+        body.put("appKey", credential.appKey());
+        body.put("timestamp", String.valueOf(clock.currentTimeMillis()));
+        body.put("nonce", requireText(nonceGenerator.generate(), "nonce"));
+        // sign 必须最后写入：签名源包含 appKey/timestamp/nonce，但不包含 sign 本身。
+        body.put("sign", sign(body, credential.secretKey()));
+        return new AuthenticatedRequest(body, new LinkedHashMap<>());
+    }
+
+    /**
+     * 按平台签名规则计算签名。
+     *
+     * <p>排序使用 Java String 自然序；null 和空白字符串不参与签名；集合使用 Java List.toString()
+     * 形态参与拼接；最终对 UTF-8 字节做 MD5 并转大写十六进制。</p>
+     */
+    static String sign(Map<String, Object> requestBody, String secretKey) {
+        // 签名副本会临时加入 secretKey，但这份 map 不会被序列化发送。
+        LinkedHashMap<String, Object> signingMap = MapUtils.copyWithoutNulls(requestBody);
+        signingMap.put("secretKey", requireText(secretKey, "secretKey"));
+        signingMap.remove("sign");
+
+        String source = signingMap.entrySet().stream()
+                .filter(entry -> shouldSign(entry.getValue()))
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("&"));
+        return md5Upper(source);
+    }
+
+    private static Credential requireCredential(Credential credential) {
+        if (credential == null) {
+            throw new StationOpenApiAuthException("signature credential is required");
+        }
+        if (credential.authMode() != AuthMode.SIGNATURE) {
+            throw new StationOpenApiAuthException("signature credential is required");
+        }
+        return credential;
+    }
+
+    private static void removeAuthFields(Map<String, Object> body) {
+        // 客户业务字段中如果意外带入鉴权字段，必须由 SDK 重新生成，避免旧 nonce 或伪造 sign 被发出。
+        body.remove("appKey");
+        body.remove("timestamp");
+        body.remove("nonce");
+        body.remove("sign");
+        body.remove("secretKey");
+    }
+
+    private static boolean shouldSign(Object value) {
+        if (value == null) {
+            return false;
+        }
+        // 平台签名规则忽略空白字符串；该值仍可按业务字段原样保留在请求 body 中。
+        return !(value instanceof String text && text.trim().isEmpty());
+    }
+
+    private static String md5Upper(String source) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            // SDK 与平台签名契约均固定 UTF-8；改用系统默认编码会破坏跨环境签名一致性。
+            byte[] bytes = digest.digest(source.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(bytes).toUpperCase(Locale.ROOT);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("MD5 digest is not available", ex);
+        }
+    }
+
+    private static String requireText(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new StationOpenApiAuthException(fieldName + " is required");
+        }
+        return value.trim();
+    }
+}

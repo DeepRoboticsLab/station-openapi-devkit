@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: token
+
+station:
+  openapi:
+    auth-mode: ACCESS_TOKEN
+    access-token: ${STATION_ACCESS_TOKEN:}

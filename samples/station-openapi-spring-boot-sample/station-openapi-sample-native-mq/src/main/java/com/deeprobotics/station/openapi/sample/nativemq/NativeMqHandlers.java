@@ -1,0 +1,41 @@
+package com.deeprobotics.station.openapi.sample.nativemq;
+
+import com.deeprobotics.station.openapi.sdk.rocketmq.model.DogAlarmMessage;
+import com.deeprobotics.station.openapi.sdk.rocketmq.model.RouteMessage;
+import com.deeprobotics.station.openapi.sdk.rocketmq.model.TaskResultMessage;
+import com.deeprobotics.station.openapi.sdk.rocketmq.model.TaskStatusMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+/**
+ * 原生 Subscriber 的四类最小 Handler，只输出非敏感业务定位字段。
+ *
+ * <p>这里接收与 Starter 示例相同的四类 SDK 模型，不记录原始 MQ body；生产项目应按业务幂等键
+ * 在事务中持久化消息，而不是照搬日志示例。</p>
+ */
+@Service
+public class NativeMqHandlers {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NativeMqHandlers.class);
+
+    public void handleTaskStatus(TaskStatusMessage message) {
+        LOG.info("Native MQ task status: taskExecuteCode={}, status={}, taskProgress={}",
+                message.taskExecuteCode(), message.status(), message.taskProgress());
+    }
+
+    public void handleTaskResult(TaskResultMessage message) {
+        LOG.info("Native MQ task result: idempotentKey={}, fileCount={}",
+                message.idempotentKey(), message.fileList().size());
+    }
+
+    public void handleDogAlarm(DogAlarmMessage message) {
+        LOG.info("Native MQ dog alarm: dogCode={}, alarmCode={}",
+                message.dogCode(), message.alarmCode());
+    }
+
+    public void handleRoute(RouteMessage message) {
+        LOG.info("Native MQ route: taskExecuteCode={}, pointCount={}",
+                message.taskExecuteCode(), message.deviceCodes().size());
+    }
+}
