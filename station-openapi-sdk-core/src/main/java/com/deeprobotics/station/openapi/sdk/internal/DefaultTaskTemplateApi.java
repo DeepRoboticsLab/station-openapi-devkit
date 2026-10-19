@@ -11,13 +11,14 @@ import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTempl
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateDeleteRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateGetRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplatePageRequest;
+import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateStatusRequest;
 import com.deeprobotics.station.openapi.sdk.model.response.tasktemplate.TaskTemplateInfo;
 import java.util.Objects;
 
 /**
  * 任务模板 API 默认实现。
  *
- * <p>创建和删除是业务写入，默认不重试；详情和分页是只读查询，可按查询策略处理连接类失败。</p>
+ * <p>创建、启停和删除是业务写入，不自动重试；详情和分页是只读查询，可按查询策略处理连接类失败。</p>
  */
 public final class DefaultTaskTemplateApi implements TaskTemplateApi {
 
@@ -29,6 +30,9 @@ public final class DefaultTaskTemplateApi implements TaskTemplateApi {
      */
     private static final EndpointDefinition CREATE = EndpointDefinition.of(
             "taskTemplate.create", "/remoteApi/onlySaveTaskModel", OperationIntent.BUSINESS_WRITE);
+    /** 模板启停会修改状态并可能清除未执行任务，因此按业务写入处理。 */
+    private static final EndpointDefinition SWITCH_STATUS = EndpointDefinition.of(
+            "taskTemplate.switchStatus", "/remoteApi/switchTaskModelStatus", OperationIntent.BUSINESS_WRITE);
     /**
      * 批量删除任务模板 endpoint。
      *
@@ -54,7 +58,7 @@ public final class DefaultTaskTemplateApi implements TaskTemplateApi {
             EndpointDefinition.of("taskTemplate.page", "/remoteApi/modelPage", OperationIntent.READ_ONLY);
 
     /**
-     * 统一执行器，屏蔽鉴权、签名、JSON、重试、异常和 R<T> 解包细节。
+     * 统一执行器，屏蔽鉴权、签名、JSON、重试、异常和 {@code R<T>} 解包细节。
      */
     private final OpenApiExecutor executor;
 
@@ -90,6 +94,19 @@ public final class DefaultTaskTemplateApi implements TaskTemplateApi {
     public void deleteByCodes(TaskTemplateDeleteRequest request) {
         // 删除没有有意义的业务返回值，只需要确认 R<?> 成功。
         deleteByCodes(request, null);
+    }
+
+    @Override
+    public void switchStatus(TaskTemplateStatusRequest request) {
+        switchStatus(request, null);
+    }
+
+    @Override
+    public void switchStatus(TaskTemplateStatusRequest request, RequestOptions options) {
+        TaskTemplateStatusRequest requiredRequest = ClientInputs.requireNonNull(request, "request");
+        // 仅检查统一业务结果，成功响应不要求非空 data；启用后也不自动下发任务。
+        executor.execute(SWITCH_STATUS, requiredRequest, new TypeRef<ApiResponse<Object>>() {
+        }, options);
     }
 
     @Override

@@ -44,6 +44,7 @@ class SampleHttpCoverageTest {
             entry("/sample/api/camera/control", "camera.control"),
             entry("/sample/api/camera/reset-ptz", "camera.resetPtz"),
             entry("/sample/api/task-template/create", "taskTemplate.create"),
+            entry("/sample/api/task-template/switch-status", "taskTemplate.switchStatus"),
             entry("/sample/api/task-template/delete-by-codes", "taskTemplate.deleteByCodes"),
             entry("/sample/api/task-template/get-by-code", "taskTemplate.getByCode"),
             entry("/sample/api/task-template/page", "taskTemplate.page"),

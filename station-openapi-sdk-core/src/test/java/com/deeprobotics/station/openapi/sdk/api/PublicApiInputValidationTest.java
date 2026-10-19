@@ -57,6 +57,8 @@ class PublicApiInputValidationTest {
                     new InvalidCall("camera.control", () -> client.camera().control(null, null)),
                     new InvalidCall("camera.resetPtz", () -> client.camera().resetPtz(null, null)),
                     new InvalidCall("taskTemplate.create", () -> client.taskTemplate().create(null, null)),
+                    new InvalidCall("taskTemplate.switchStatus", () -> client.taskTemplate().switchStatus(null, null)),
+                    new InvalidCall("taskTemplate.switchStatus.default", () -> client.taskTemplate().switchStatus(null)),
                     new InvalidCall("taskTemplate.deleteByCodes",
                             () -> client.taskTemplate().deleteByCodes(null, null)),
                     new InvalidCall("taskTemplate.getByCode", () -> client.taskTemplate().getByCode(null, null)),

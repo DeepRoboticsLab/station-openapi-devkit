@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TaskTemplateInfo(
         /**
-         * 任务模板编码。删除模板、查询详情和后续任务下发都依赖该编码。
+         * 任务模板编码。启停、删除、查询详情和后续任务下发都依赖该编码。
          */
         String taskCode,
         /**
@@ -59,7 +59,7 @@ public record TaskTemplateInfo(
          */
         LocalDateTime createTime,
         /**
-         * 是否启用：{@code "1"} 启用、{@code "0"} 停用。
+         * 是否启用：{@code "1"} 启用、{@code "0"} 停用。详情返回字符串，启停请求使用整数。
          */
         String isEnable,
         /**

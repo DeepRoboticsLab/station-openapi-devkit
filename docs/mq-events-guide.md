@@ -10,6 +10,7 @@ Contact your assigned technical support representative to confirm:
 
 - The RocketMQ NameServer address for the target environment;
 - The `httpRemote` topic is available;
+- Platform remote publishing is enabled with `http_three_part_remote_upload=true`;
 - The application is permitted to consume the messages;
 - The application host can reach both the NameServer and the Broker addresses and ports returned by it;
 - If the platform requires consumer groups to be created in advance, the group name that may be used.
@@ -70,6 +71,10 @@ Fixed topic: `httpRemote`.
 | `uploadHttpRemoteRoute` | `RouteMessage` | Task inspection route |
 
 `uploadHttpRemoteDevicePos` is not part of the message scope supported by the SDK. Query real-time position through `client.dog().getPosition(...)`.
+
+`TaskResultMessage.alarmLevel()` is available from platform v1.3.2: `"0"` normal, `"1"` warning, `"2"` general, `"3"` serious, and `"4"` emergency. The SDK accepts JSON integers and strings and preserves unknown codes. Older messages, omitted values, and explicit nulls yield `null`, which must not be treated as normal. `confidence()` also remains a nullable string.
+
+The original 20-argument constructor remains available and sets the alarm level to `null`. A point may produce an initial collection result followed by an analysis result that updates confidence and alarm level; merge file lists using the business key.
 
 ## 5. Consumer Groups
 

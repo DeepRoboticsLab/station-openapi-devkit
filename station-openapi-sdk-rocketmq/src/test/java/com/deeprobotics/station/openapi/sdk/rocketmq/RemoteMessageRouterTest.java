@@ -9,6 +9,7 @@ import com.deeprobotics.station.openapi.sdk.rocketmq.model.TaskResultMessage;
 import com.deeprobotics.station.openapi.sdk.rocketmq.model.TaskStatusMessage;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -21,6 +22,36 @@ import org.junit.jupiter.api.Test;
  * 并同时覆盖普通 JSON 对象与外层字符串包裹的 JSON。测试不启动真实 broker。</p>
  */
 class RemoteMessageRouterTest {
+
+    @Test
+    void taskResultPreservesNumericAndStringAlarmLevelsIncludingUnknownCodes() {
+        AtomicReference<TaskResultMessage> captured = new AtomicReference<>();
+        RemoteMessageRouter router = RemoteMessageRouter.builder().onTaskResult(captured::set).build();
+        for (String value : List.of("0", "4", "\"3\"", "\"99\"")) {
+            String body = "{\"taskExecuteCode\":\"E-1\",\"devicePointCode\":\"P-1\",\"alarmLevel\":" + value + "}";
+            assertThat(router.route(RemoteMessageTags.TAG_TASK_RESULT, bytes(body)))
+                    .isEqualTo(RemoteMessageConsumeResult.ACK);
+            assertThat(captured.get().alarmLevel()).isEqualTo(value.replace("\"", ""));
+        }
+    }
+
+    @Test
+    void historicalTaskResultsKeepMissingAlarmLevelUnknown() {
+        AtomicReference<TaskResultMessage> captured = new AtomicReference<>();
+        RemoteMessageRouter router = RemoteMessageRouter.builder().onTaskResult(captured::set).build();
+        for (String body : List.of("{}", "{\"alarmLevel\":null}")) {
+            assertThat(router.route(RemoteMessageTags.TAG_TASK_RESULT, bytes(body)))
+                    .isEqualTo(RemoteMessageConsumeResult.ACK);
+            assertThat(captured.get().alarmLevel()).isNull();
+            assertThat(captured.get().confidence()).isNull();
+            assertThat(captured.get().fileList()).isEmpty();
+        }
+        TaskResultMessage legacy = new TaskResultMessage(null, null, null, null, null, "P-1",
+                null, null, null, null, null, "E-1", null, null, null, null, null, null, null, null);
+        assertThat(legacy.alarmLevel()).isNull();
+        assertThat(legacy.idempotentKey()).isEqualTo("E-1:P-1");
+        assertThat(legacy.fileList()).isEmpty();
+    }
 
     @Test
     void exposesHttpRemoteTopicAndExactlyFourSupportedTags() {

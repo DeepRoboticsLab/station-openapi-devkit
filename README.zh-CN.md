@@ -2,7 +2,7 @@
 
 **语言：** [English](README.md) | 简体中文
 
-Station OpenAPI Java SDK 面向使用 JDK 17 和 Spring Boot 3 的应用，提供 27 个 HTTP 接口、两种鉴权方式、统一分页与异常处理、流式文件下载，以及可选的 RocketMQ 消息接入。
+Station OpenAPI Java SDK 面向使用 JDK 17 和 Spring Boot 3 的应用，提供 28 个 HTTP 接口、两种鉴权方式、统一分页与异常处理、流式文件下载，以及可选的 RocketMQ 消息接入。
 
 当前源码版本为 `1.0.0-SNAPSHOT`。项目通过公司 GitHub 公开仓库提供源码，不在 Maven Central 发布官方 Jar 或公共 Maven 坐标。
 
@@ -23,7 +23,9 @@ Station OpenAPI Java SDK 面向使用 JDK 17 和 Spring Boot 3 的应用，提�
 - AppKey 和 SecretKey，或 Access Token，两种鉴权凭证任选其一；
 - 如需接收 RocketMQ 消息，再获取 NameServer 地址并确认消息权限。
 
-技术支持提供的平台环境已经与本 SDK 的接口配套，无需自行判断平台版本。Endpoint 使用技术支持提供的、以 `http://` 或 `https://` 开头的完整根地址，不要自行追加 `/remoteApi/*` 接口路径。
+新增的任务模板启停接口需要平台 **v1.3.3 或更高版本**；MQ 任务结果的 `alarmLevel` 从平台 v1.3.2 起提供，旧消息缺失时为 `null`。请与技术支持确认目标环境支持所需功能。
+
+Endpoint 使用技术支持提供的、以 `http://` 或 `https://` 开头的完整根地址，不要自行追加 `/remoteApi/*` 接口路径。
 
 ## 获取和集成 SDK
 
@@ -38,9 +40,9 @@ Station OpenAPI Java SDK 面向使用 JDK 17 和 Spring Boot 3 的应用，提�
 
 仓库内提供了可直接运行的 [Spring Boot Sample](samples/station-openapi-spring-boot-sample/README.zh-CN.md)，包含：
 
-- Swagger UI 中的全部 27 个 HTTP 调用；
+- Swagger UI 中的全部 28 个 HTTP 调用；
 - Token 和签名两种鉴权配置；
-- 默认锁定的 10 个写入或控制操作；
+- 默认锁定的 11 个写入或控制操作；
 - 文件流式下载；
 - RocketMQ Starter 和 SDK 原生消费者示例。
 

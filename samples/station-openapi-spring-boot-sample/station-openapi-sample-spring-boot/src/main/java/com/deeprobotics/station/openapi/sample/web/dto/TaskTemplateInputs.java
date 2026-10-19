@@ -4,14 +4,20 @@ import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTempl
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateDeleteRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateGetRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplatePageRequest;
+import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateStatusRequest;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
 /**
- * 任务模板新增、删除与查询接口的轻量 Web 入参集合。
+ * 任务模板新增、启停、删除与查询接口的轻量 Web 入参集合。
  *
  * <p>record 负责 HTTP 结构校验并显式构建 SDK 请求；点位、月份和星期等集合保持 Java 集合，
  * 由 SDK 按平台 wire contract 转换为逗号串。</p>
@@ -75,6 +81,34 @@ public final class TaskTemplateInputs {
                     .invalidDailyStartTime(invalidDailyStartTime)
                     .invalidDailyEndTime(invalidDailyEndTime)
                     .build();
+        }
+    }
+
+    /**
+     * 模板启停入参。状态必须显式提供，避免缺失时被当作 0 而误停用模板。
+     *
+     * @param taskCode 模板编码，不是任务执行编码
+     * @param isEnable 0 停用、1 启用；此接口使用整数，区别于创建模板的字符串字段
+     */
+    @Schema(name = "TaskTemplateSwitchStatusInput", description = "模板启停 / Task template status")
+    public record SwitchStatus(
+            @Schema(description = "任务模板编码 / Task template code", example = "TM-001")
+            @NotBlank(message = "REMOTE_API_TASK_CODE_REQUIRED") String taskCode,
+            @Schema(description = "0=停用，1=启用；启用后需再次下发 / "
+                    + "0=disabled, 1=enabled; issue the template again after enabling",
+                    allowableValues = {"0", "1"}, example = "0")
+            @NotNull(message = "REMOTE_API_TASK_ENABLE_REQUIRED")
+            @JsonDeserialize(using = StrictIntegerDeserializer.class)
+            @Min(value = 0, message = "REMOTE_API_TASK_ENABLE_RANGE")
+            @Max(value = 1, message = "REMOTE_API_TASK_ENABLE_RANGE") Integer isEnable) {
+
+        /**
+         * 显式构建 SDK 请求，保留整数状态；不触发任务下发。
+         *
+         * @return 由 SDK 校验并发送的不可变启停请求
+         */
+        public TaskTemplateStatusRequest toSdkRequest() {
+            return TaskTemplateStatusRequest.builder().taskCode(taskCode).isEnable(isEnable).build();
         }
     }
 

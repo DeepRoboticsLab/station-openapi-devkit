@@ -8,7 +8,11 @@ This is the current GitHub source version. It has not been released as a formal 
 
 ### SDK
 
-- Provides seven API groups with 27 Station OpenAPI HTTP operations.
+- Adds `taskTemplate().switchStatus(...)` for platform v1.3.3+, bringing HTTP coverage to 28 operations after checking current documentation and backend sources.
+- Adds robot posture commands for lying down (15) and standing up (16), retaining raw command codes.
+- Adds nullable string `alarmLevel` to task-result MQ messages (platform v1.3.2+), accepting numeric/string values and retaining the original constructor.
+- Clarifies Chinese JavaDoc for template status effects, nullable issue results across execution plans, and partial success during batch cancellation.
+- Provides seven API groups with 28 Station OpenAPI HTTP operations.
 - Supports Access Token and AppKey/SecretKey signature authentication.
 - Provides unified pagination, exceptions, request IDs, timeouts, and controlled retries.
 - Supports streaming downloads through `Path` and `OutputStream`.
@@ -18,10 +22,12 @@ This is the current GitHub source version. It has not been released as a formal 
 
 ### Spring Boot Sample
 
+- Requires a JSON integer for template status, preventing fractional values from being truncated into control commands; JSON parsing errors return localized ProblemDetail without echoing input.
+- Adds template status Swagger documentation, SDK calls, bilingual validation, and default protection, bringing protected operations to 11; both MQ examples display the alarm level.
 - Uses Spring Boot 3.5.16 and JDK 17.
-- Exposes all 27 SDK HTTP calls through Swagger UI.
+- Exposes all 28 SDK HTTP calls through Swagger UI.
 - Supports Token and signature configurations.
-- Locks ten write or control operations by default.
+- Locks eleven write or control operations by default.
 - Provides Chinese and English validation and SDK error responses.
 - Streams files through `StreamingResponseBody`.
 - Includes a RocketMQ Starter example and a supplemental native Subscriber example.

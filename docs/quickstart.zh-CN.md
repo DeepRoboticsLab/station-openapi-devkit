@@ -12,7 +12,7 @@
 - AppKey 和 SecretKey，或 Access Token；
 - 凭证可访问的业务范围。
 
-技术支持提供的平台环境已与 SDK 配套，无需自行选择平台版本。Endpoint 可以包含平台部署所需的路径，但不要追加具体的 `/remoteApi/*` 地址。
+请确认目标环境支持所需功能：模板启停需要平台 v1.3.3+，MQ 结果告警等级从 v1.3.2 起提供。Endpoint 可以包含平台部署所需的路径，但不要追加具体的 `/remoteApi/*` 地址。
 
 ## 2. 把 SDK 放入项目
 
@@ -147,4 +147,4 @@ public class StationConnectionService {
 
 ## 7. 运行完整 Sample
 
-需要查看全部 27 个调用、请求参数和返回结构时，请在 IDEA 中运行 [Spring Boot Sample](../samples/station-openapi-spring-boot-sample/README.zh-CN.md)，然后通过 Swagger UI 调用。
+需要查看全部 28 个调用、请求参数和返回结构时，请在 IDEA 中运行 [Spring Boot Sample](../samples/station-openapi-spring-boot-sample/README.zh-CN.md)，然后通过 Swagger UI 调用。

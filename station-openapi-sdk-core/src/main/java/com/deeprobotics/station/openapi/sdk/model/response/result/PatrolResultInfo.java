@@ -62,7 +62,7 @@ public record PatrolResultInfo(
          * 以兼容后续扩展。</p>
          */
         List<FileInfo> fileList,
-        /** 告警等级；为空通常表示未触发告警或平台未给出等级。 */
+        /** 告警等级：0 正常、1 警告、2 一般、3 严重、4 紧急；null 表示未提供，不能视为正常。 */
         Integer alarmLevel,
         /** 告警类型编码。 */
         String alarmType,

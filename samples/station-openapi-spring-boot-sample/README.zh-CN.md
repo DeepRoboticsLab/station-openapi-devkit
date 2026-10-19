@@ -2,7 +2,7 @@
 
 **语言：** [English](README.md) | 简体中文
 
-这个 Sample 用于帮助你在 Spring Boot 3 中配置 Station OpenAPI SDK、运行 Swagger，并查看 27 个 HTTP 接口和 RocketMQ 消息的调用方式。
+这个 Sample 用于帮助你在 Spring Boot 3 中配置 Station OpenAPI SDK、运行 Swagger，并查看 28 个 HTTP 接口和 RocketMQ 消息的调用方式。
 
 主模块适合第一次接入；原生 MQ 模块只用于不使用 RocketMQ Starter 的场景。
 
@@ -28,7 +28,7 @@
 
 请先联系项目对接的技术支持人员获取 Endpoint 和一种鉴权凭证。没有这些配置，Sample 可以完成编译，但不能调用 Station 平台。
 
-技术支持提供的平台环境已经与 SDK 配套，无需自行选择平台版本。
+任务模板启停需要平台 **v1.3.3 或更高版本**；MQ 任务结果的 `alarmLevel` 从平台 v1.3.2 起提供。旧消息缺失该字段时为 `null`，不能视为正常等级 0。
 
 ## 2. 在 IDEA 中导入
 
@@ -135,18 +135,18 @@ POST /sample/api/system/get-time-text
 
 ## 5. Swagger 中的功能
 
-Swagger 共提供 27 个操作：
+Swagger 共提供 28 个操作：
 
 | 分组 | 数量 | 内容 |
 |---|---:|---|
 | Inventory | 8 | 四足狗、地图、摄像机流、巡检点、维保区域、路网、停靠点和节点查询 |
 | Dog | 6 | 状态、充电、控制、选点、告警和实时坐标 |
 | Camera | 2 | 摄像机控制和云台复位 |
-| Task Template | 4 | 创建、删除、详情和分页 |
+| Task Template | 5 | 创建、启停、删除、详情和分页 |
 | Task | 4 | 下发、控制、批量取消和执行记录分页 |
 | Result | 2 | 巡检结果分页和资源下载 |
 | System | 1 | 平台时间 |
-| **合计** | **27** | |
+| **合计** | **28** | |
 
 每个 Swagger 操作都对应一个明确的 SDK 调用。完整调用代码位于：
 
@@ -157,9 +157,30 @@ station-openapi-sample-spring-boot/src/main/java/
 
 七个 Service 直接注入 `StationOpenApiClient` 并调用 SDK，适合复制到自己的业务 Service 中再按需求调整。
 
+### 任务模板启停
+
+`POST /sample/api/task-template/switch-status` 映射到 `POST /remoteApi/switchTaskModelStatus`，成功返回 `204 No Content`。它受下节的危险操作开关保护。
+
+```json
+{"taskCode":"TM-001","isEnable":0}
+```
+
+`isEnable` 必须为 JSON 整数：0 停用、1 启用；小数、带引号的字符串和布尔值会返回 400。停用会清除模板下所有未执行任务；启用不会自动生成任务，必须再次下发。该操作不重试，结果未知时先查询模板详情和任务执行记录。
+
+直接使用 SDK 时：
+
+```java
+client.taskTemplate().switchStatus(
+        TaskTemplateStatusRequest.builder().taskCode("TM-001").isEnable(0).build());
+```
+
+请求类型位于 `com.deeprobotics.station.openapi.sdk.model.request.tasktemplate`。与此接口不同，模板创建和详情的 `isEnable` 保持字符串类型。
+
+机器人运动控制现在也提供 `MotionCommand.LIE_DOWN`（15）和 `STAND_UP`（16）。SDK 默认 `value="0"`；Sample 的 `/sample/api/dog/control` 要求显式提供 `value`，姿态指令可传 `"0"`。运动 `value` 仍不得大于 0.6，`speed` 表示 1..5 次重复下发。
+
 ## 6. 默认锁定的操作
 
-以下 10 个操作会修改平台数据或控制现场设备，因此在 Sample 中默认返回 403，不会调用 SDK：
+以下 11 个操作会修改平台数据或控制现场设备，因此在 Sample 中默认返回 403，不会调用 SDK：
 
 | Sample 路径 | 用途 |
 |---|---|
@@ -169,6 +190,7 @@ station-openapi-sample-spring-boot/src/main/java/
 | `/sample/api/camera/control` | 控制摄像机 |
 | `/sample/api/camera/reset-ptz` | 复位云台 |
 | `/sample/api/task-template/create` | 创建任务模板 |
+| `/sample/api/task-template/switch-status` | 启用或停用任务模板 |
 | `/sample/api/task-template/delete-by-codes` | 删除任务模板 |
 | `/sample/api/task/issue` | 下发任务 |
 | `/sample/api/task/control` | 控制任务 |

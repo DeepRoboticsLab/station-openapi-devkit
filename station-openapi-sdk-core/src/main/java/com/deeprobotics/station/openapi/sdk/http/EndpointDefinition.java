@@ -6,7 +6,7 @@ import java.util.Objects;
  * 单个 OpenAPI 操作的元数据。
  *
  * <p>业务 API 方法不应在 executor 调用处散落 path 和重试语义，而应先定义为
- * EndpointDefinition。这样后续覆盖测试可以集中验证 27 个生产 path，危险操作也能统一阻止默认重试。</p>
+ * EndpointDefinition。这样后续覆盖测试可以集中验证 28 个生产 path，危险操作也能统一阻止默认重试。</p>
  */
 public final class EndpointDefinition {
 

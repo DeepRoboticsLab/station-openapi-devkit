@@ -57,8 +57,8 @@ public final class DogInputs {
                     example = "2")
             @NotNull(message = "REMOTE_API_DOG_CONTROL_TYPE_REQUIRED")
             @Min(value = 1, message = "REMOTE_API_DOG_CONTROL_TYPE_MIN") Integer type,
-            @Schema(description = "当前 type=1 使用 6；type=2 使用 0/1/2/3/4/11/12；保留 raw code / "
-                    + "Current type=1 uses 6; type=2 uses 0/1/2/3/4/11/12; raw codes remain supported",
+            @Schema(description = "当前 type=1 使用 6；type=2 使用 0/1/2/3/4/11/12/15/16，15=趴下，16=起立；保留 raw code / "
+                    + "Current type=1 uses 6; type=2 uses 0/1/2/3/4/11/12/15/16, 15=lie down, 16=stand up; raw codes remain supported",
                     example = "1")
             @NotNull(message = "REMOTE_API_DOG_CONTROL_COMMAND_REQUIRED") Integer command,
             @Schema(description = "指令值；type=2 时为不大于 0.6 的数值字符串 / "

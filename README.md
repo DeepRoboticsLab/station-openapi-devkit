@@ -2,7 +2,7 @@
 
 **Language:** English | [简体中文](README.zh-CN.md)
 
-Station OpenAPI Java SDK is intended for applications built with JDK 17 and Spring Boot 3. It provides 27 HTTP operations, two authentication modes, unified pagination and exception handling, streaming file downloads, and optional RocketMQ message integration.
+Station OpenAPI Java SDK is intended for applications built with JDK 17 and Spring Boot 3. It provides 28 HTTP operations, two authentication modes, unified pagination and exception handling, streaming file downloads, and optional RocketMQ message integration.
 
 The current source version is `1.0.0-SNAPSHOT`. The project is distributed as source code through the company's public GitHub repository. No official JARs or public Maven coordinates are published to Maven Central.
 
@@ -23,7 +23,9 @@ Contact your assigned technical support representative to obtain the following f
 - Either an AppKey and SecretKey pair or an Access Token;
 - If RocketMQ messages are required, the NameServer address and confirmation that message consumption is enabled.
 
-The platform environment provided by technical support is compatible with all SDK operations, so you do not need to select a platform version yourself. Use the complete root endpoint supplied by technical support. It must begin with `http://` or `https://`. Do not append an individual `/remoteApi/*` path.
+The new task template status operation requires platform **v1.3.3 or later**. Task-result MQ messages provide `alarmLevel` from platform v1.3.2; older messages leave it `null`. Confirm support for the features you need with technical support.
+
+Use the complete root endpoint supplied by technical support. It must begin with `http://` or `https://`. Do not append an individual `/remoteApi/*` path.
 
 ## Obtain and Integrate the SDK
 
@@ -38,9 +40,9 @@ This project does not provide official JARs through Maven Central. See [Source a
 
 The repository includes a runnable [Spring Boot Sample](samples/station-openapi-spring-boot-sample/README.md) with:
 
-- All 27 HTTP operations in Swagger UI;
+- All 28 HTTP operations in Swagger UI;
 - Token and signature authentication configurations;
-- Ten write or control operations locked by default;
+- Eleven write or control operations locked by default;
 - Streaming file downloads;
 - RocketMQ Starter and SDK native subscriber examples.
 

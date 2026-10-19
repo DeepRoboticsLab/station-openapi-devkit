@@ -56,6 +56,24 @@ class DogApiTest {
     private static final JsonCodec JSON = JsonCodec.defaultCodec();
 
     @Test
+    void postureCommandsUseDocumentedWireCodesAndDefaultValue() {
+        RecordingTransport transport = new RecordingTransport().enqueueSuccess(null).enqueueSuccess(null);
+        DogApi api = new DefaultDogApi(newExecutor(transport));
+        api.control(DogControlRequest.builder().dogCode("DOG-001")
+                .type(DogControlRequest.Type.MOTION_CONTROL)
+                .command(DogControlRequest.MotionCommand.LIE_DOWN).build());
+        api.control(DogControlRequest.builder().dogCode("DOG-001")
+                .type(DogControlRequest.Type.MOTION_CONTROL)
+                .command(DogControlRequest.MotionCommand.STAND_UP).build());
+
+        assertThat(transport.jsonRequests()).hasSize(2);
+        assertThat(parseBody(transport.jsonRequests().get(0)))
+                .containsEntry("type", 2).containsEntry("command", 15).containsEntry("value", "0");
+        assertThat(parseBody(transport.jsonRequests().get(1)))
+                .containsEntry("type", 2).containsEntry("command", 16).containsEntry("value", "0");
+    }
+
+    @Test
     void dogEndpointsUseExpectedPathsAndOperationIntents() {
         // EndpointDefinition 是执行器判断重试策略和异常语义的依据；路径和 intent 必须一起锁定。
         Map<String, OperationIntent> endpointIntents = readEndpointDefinitions(DefaultDogApi.class).stream()

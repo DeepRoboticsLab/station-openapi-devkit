@@ -15,6 +15,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,6 +45,21 @@ public class SampleExceptionHandler {
 
     public SampleExceptionHandler(MessageSource messageSource) {
         this.messageSource = messageSource;
+    }
+
+    /**
+     * 将 JSON 格式或字段类型错误统一转换为本地化 400，避免回显解析异常中的请求值。
+     *
+     * @param exception HTTP 消息解析异常；不把其内容写入响应或日志
+     * @return 带稳定校验错误码的 ProblemDetail
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleUnreadableBody(HttpMessageNotReadableException exception) {
+        String title = message(VALIDATION_FAILED, LocaleContextHolder.getLocale());
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, title);
+        detail.setTitle(title);
+        detail.setProperty("code", VALIDATION_FAILED);
+        return detail;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

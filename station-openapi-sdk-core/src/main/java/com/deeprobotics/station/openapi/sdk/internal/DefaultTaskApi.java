@@ -28,10 +28,10 @@ import java.util.Objects;
 public final class DefaultTaskApi implements TaskApi {
 
     /**
-     * 下发任务模板并生成一次任务执行记录。
+     * 按任务模板的执行计划生成并下发任务。
      *
-     * <p>平台返回的 {@code data} 是本次执行的 {@code taskExecuteCode}，不是模板编码 {@code taskCode}。
-     * 该编码会继续用于任务控制、批量取消和结果查询。</p>
+     * <p>立即执行可返回 {@code taskExecuteCode}；定时、周期或间隔计划不保证返回单个编码。
+     * 保留平台的可空 data，不把空结果误判为解析失败。</p>
      */
     private static final EndpointDefinition ISSUE =
             EndpointDefinition.of("task.issue", "/remoteApi/issue", OperationIntent.TASK_CONTROL);

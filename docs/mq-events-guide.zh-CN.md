@@ -10,6 +10,7 @@ Station OpenAPI 通过固定 Topic `httpRemote` 推送四类消息。Spring Boot
 
 - 当前环境的 RocketMQ NameServer 地址；
 - Topic `httpRemote` 已经可用；
+- 平台远程推送开关 `http_three_part_remote_upload=true` 已开启；
 - 当前应用具有消费消息的权限；
 - 应用所在机器能够访问 NameServer 返回的 Broker 地址和端口；
 - 如果平台要求预先创建 consumer group，确认可用的 group 名称。
@@ -70,6 +71,10 @@ Listener 不需要自行解析 JSON，也不要记录原始消息 body。SDK Rou
 | `uploadHttpRemoteRoute` | `RouteMessage` | 任务巡视路线 |
 
 `uploadHttpRemoteDevicePos` 不在 SDK 当前支持的消息范围内。实时坐标通过 `client.dog().getPosition(...)` 查询。
+
+任务结果的 `TaskResultMessage.alarmLevel()` 从平台 v1.3.2 起提供：`"0"` 正常、`"1"` 警告、`"2"` 一般、`"3"` 严重、`"4"` 紧急。SDK 同时接受 JSON 整数和字符串，并保留未知编码；旧平台、缺失或显式 null 均返回 `null`，不能把未知等级当作正常。`confidence()` 同样保持可空字符串。
+
+增加告警等级后保留原有 20 参数构造器，旧代码无需补参数；使用旧构造器创建的消息告警等级为 `null`。同一点位可能先收到采集结果，再收到识别结果；后一次消息可能更新置信度和告警等级，文件列表仍按业务键合并。
 
 ## 5. consumer group
 

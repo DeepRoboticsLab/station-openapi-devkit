@@ -8,7 +8,11 @@
 
 ### SDK
 
-- 提供七个 API 分组，共 27 个 Station OpenAPI HTTP 调用。
+- 按当前平台文档和后端核对：新增任务模板启停 `taskTemplate().switchStatus(...)`（平台 v1.3.3+），HTTP 覆盖增至 28 个。
+- 机器人控制补充趴下（15）和起立（16）枚举，保留原始指令码入口。
+- MQ 任务结果增加可空字符串 `alarmLevel`（平台 v1.3.2+），兼容数字/字符串消息及原有构造器。
+- 完善中文 JavaDoc，明确启停副作用、任务计划的可空下发结果及批量取消的部分成功语义。
+- 提供七个 API 分组，共 28 个 Station OpenAPI HTTP 调用。
 - 支持 Access Token 和 AppKey/SecretKey 签名两种鉴权方式。
 - 提供统一分页、异常、请求 ID、超时和受控重试。
 - 支持通过 `Path` 或 `OutputStream` 流式下载文件。
@@ -18,10 +22,12 @@
 
 ### Spring Boot Sample
 
+- 启停状态严格接受 JSON 整数，防止小数被截断成控制状态；JSON 解析错误统一返回本地化 ProblemDetail，避免回显请求值。
+- 增加模板启停的 Swagger、SDK 调用、双语校验和默认门禁，危险操作增至 11 个；两种 MQ 示例展示告警等级。
 - 使用 Spring Boot 3.5.16 和 JDK 17。
-- Swagger UI 展示全部 27 个 SDK HTTP 调用。
+- Swagger UI 展示全部 28 个 SDK HTTP 调用。
 - 支持 Token 和签名两种配置。
-- 10 个写入或控制操作默认锁定。
+- 11 个写入或控制操作默认锁定。
 - 提供中英文参数错误和 SDK 异常响应。
 - 文件通过 `StreamingResponseBody` 输出。
 - 提供 RocketMQ Starter 主示例和原生 Subscriber 补充示例。

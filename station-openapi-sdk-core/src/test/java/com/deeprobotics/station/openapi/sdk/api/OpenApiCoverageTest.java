@@ -60,6 +60,7 @@ class OpenApiCoverageTest {
             "/remoteApi/cameraCtrl",
             "/remoteApi/ptzReset",
             "/remoteApi/onlySaveTaskModel",
+            "/remoteApi/switchTaskModelStatus",
             "/remoteApi/removeTaskModelByCodes",
             "/remoteApi/taskModelByCode",
             "/remoteApi/modelPage",
@@ -88,16 +89,16 @@ class OpenApiCoverageTest {
     }
 
     @Test
-    void endpointMetadataContainsExactlyTwentySevenProductionPaths() {
+    void endpointMetadataContainsExactlyTwentyEightProductionPaths() {
         List<String> actualPaths = endpointDefinitions()
                 .map(EndpointDefinition::path)
                 .toList();
 
         assertThat(actualPaths)
-                .as("SDK must expose exactly the 27 approved production RemoteApi paths")
+                .as("SDK must expose exactly the 28 approved production RemoteApi paths")
                 .containsExactlyInAnyOrderElementsOf(PRODUCTION_PATHS)
                 .doesNotHaveDuplicates()
-                .hasSize(27);
+                .hasSize(28);
     }
 
     @Test

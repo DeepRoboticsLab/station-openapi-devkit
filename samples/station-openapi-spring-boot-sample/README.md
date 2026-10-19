@@ -2,7 +2,7 @@
 
 **Language:** English | [简体中文](README.zh-CN.md)
 
-This Sample shows how to configure Station OpenAPI SDK in Spring Boot 3, run Swagger UI, call all 27 HTTP operations, and integrate RocketMQ messages.
+This Sample shows how to configure Station OpenAPI SDK in Spring Boot 3, run Swagger UI, call all 28 HTTP operations, and integrate RocketMQ messages.
 
 Use the main module for the first integration. The native MQ module is only for applications that do not use RocketMQ Starter.
 
@@ -28,7 +28,7 @@ Prepare the following:
 
 Contact your assigned technical support representative before starting to obtain the endpoint and one authentication method. Without them, the Sample can compile but cannot call the Station platform.
 
-The platform environment supplied by technical support is compatible with the SDK, so you do not need to select a platform version.
+Task template enable/disable requires platform **v1.3.3 or later**. Task-result MQ messages provide `alarmLevel` from platform v1.3.2. A missing field remains `null` and must not be treated as normal level 0.
 
 ## 2. Import into IDEA
 
@@ -135,18 +135,18 @@ It does not modify platform data and verifies the endpoint, network, and authent
 
 ## 5. Swagger Operations
 
-Swagger exposes 27 operations:
+Swagger exposes 28 operations:
 
 | Group | Count | Contents |
 |---|---:|---|
 | Inventory | 8 | Quadruped robots, maps, camera streams, inspection points, maintenance areas, road maps, docks, and nodes |
 | Dog | 6 | Status, charging, control, target position, alarms, and real-time position |
 | Camera | 2 | Camera control and PTZ reset |
-| Task Template | 4 | Create, delete, details, and page query |
+| Task Template | 5 | Create, enable/disable, delete, details, and page query |
 | Task | 4 | Issue, control, batch cancellation, and execution page query |
 | Result | 2 | Inspection result page query and resource download |
 | System | 1 | Platform time |
-| **Total** | **27** | |
+| **Total** | **28** | |
 
 Each Swagger operation maps to one explicit SDK call. The complete call examples are under:
 
@@ -157,9 +157,30 @@ station-openapi-sample-spring-boot/src/main/java/
 
 The seven services inject `StationOpenApiClient` directly and call the SDK. Use them as references when implementing your own business services.
 
+### Enable or Disable a Task Template
+
+`POST /sample/api/task-template/switch-status` calls `POST /remoteApi/switchTaskModelStatus` and returns `204 No Content` on success. The dangerous-operation switch below protects this operation.
+
+```json
+{"taskCode":"TM-001","isEnable":0}
+```
+
+`isEnable` must be a JSON integer: 0 disables, 1 enables. Fractional numbers, quoted strings, and booleans return 400. Disabling removes all pending tasks under the template. Enabling does not create tasks automatically; issue the template again. The SDK never retries this write. If the result is unknown, query template details and task executions first.
+
+Direct SDK usage:
+
+```java
+client.taskTemplate().switchStatus(
+        TaskTemplateStatusRequest.builder().taskCode("TM-001").isEnable(0).build());
+```
+
+The request type belongs to `com.deeprobotics.station.openapi.sdk.model.request.tasktemplate`. Template creation and detail responses retain their existing string `isEnable` field.
+
+Robot motion control also provides `MotionCommand.LIE_DOWN` (15) and `STAND_UP` (16). The SDK defaults to `value="0"`; the Sample's `/sample/api/dog/control` requires an explicit value, which can be `"0"` for posture commands. Motion values must still be at most 0.6, and `speed` means 1..5 repeated command submissions.
+
 ## 6. Operations Locked by Default
 
-The following ten operations modify platform data or control field equipment. The Sample returns HTTP 403 before calling the SDK:
+The following eleven operations modify platform data or control field equipment. The Sample returns HTTP 403 before calling the SDK:
 
 | Sample path | Purpose |
 |---|---|
@@ -169,6 +190,7 @@ The following ten operations modify platform data or control field equipment. Th
 | `/sample/api/camera/control` | Control a camera |
 | `/sample/api/camera/reset-ptz` | Reset PTZ |
 | `/sample/api/task-template/create` | Create a task template |
+| `/sample/api/task-template/switch-status` | Enable or disable a task template |
 | `/sample/api/task-template/delete-by-codes` | Delete task templates |
 | `/sample/api/task/issue` | Issue a task |
 | `/sample/api/task/control` | Control a task |

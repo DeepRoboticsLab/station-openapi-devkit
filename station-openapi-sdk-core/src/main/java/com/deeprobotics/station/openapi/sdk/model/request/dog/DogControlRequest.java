@@ -197,7 +197,15 @@ public final class DogControlRequest implements OpenApiRequest {
         /**
          * 右移，wire 值为 {@code 12}。
          */
-        RIGHT(12);
+        RIGHT(12),
+        /**
+         * 趴下，wire 值为 {@code 15}；可沿用请求默认 {@code value="0"}。
+         */
+        LIE_DOWN(15),
+        /**
+         * 起立，wire 值为 {@code 16}；可沿用请求默认 {@code value="0"}。
+         */
+        STAND_UP(16);
 
         private final int code;
 

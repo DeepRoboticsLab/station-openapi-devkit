@@ -7,12 +7,13 @@ import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTempl
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateDeleteRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateGetRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplatePageRequest;
+import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateStatusRequest;
 import com.deeprobotics.station.openapi.sdk.model.response.tasktemplate.TaskTemplateInfo;
 
 /**
  * 任务模板 API 分组。
  *
- * <p>模板查询属于 READ_ONLY；模板创建和删除属于 BUSINESS_WRITE，默认不重试。
+ * <p>模板查询属于 READ_ONLY；模板创建、启停和删除属于 BUSINESS_WRITE，不自动重试。
  * 这是因为请求失败时模板可能已经被平台保存，SDK 不能假设重复提交是安全的。</p>
  *
  * <p>请求字段的 wire 形态固定为：{@code taskCodes} 是 JSON 数组，
@@ -46,10 +47,32 @@ public interface TaskTemplateApi {
     String create(TaskTemplateCreateRequest request, RequestOptions options);
 
     /**
+     * 启用或停用任务模板（平台 v1.3.3 起支持）。
+     *
+     * <p>对应 {@code POST /remoteApi/switchTaskModelStatus}。停用会清除模板下未执行的任务；
+     * 启用不会自动下发，需另行调用 {@code task().issue(...)}。成功响应允许 data 为 null。</p>
+     *
+     * <p>这是业务写入，不自动重试。连接或超时异常带 {@code resultUnknown=true} 时，
+     * 应先查询模板详情的 isEnable 和任务执行记录，再决定下一步操作。</p>
+     *
+     * @param request 任务模板编码和整数目标状态，不能为 {@code null}
+     */
+    void switchStatus(TaskTemplateStatusRequest request);
+
+    /**
+     * 带单次调用选项的模板启停；副作用和版本要求见 {@link #switchStatus(TaskTemplateStatusRequest)}。
+     *
+     * @param request 任务模板编码和目标状态：0 停用、1 启用
+     * @param options 请求 ID 和超时覆盖配置；null 使用默认配置，重试选项不能使本操作自动重试
+     */
+    void switchStatus(TaskTemplateStatusRequest request, RequestOptions options);
+
+    /**
      * 按任务模板编码批量删除模板。
      *
      * <p>对应 {@code POST /remoteApi/removeTaskModelByCodes}。请求体中的 {@code taskCodes}
-     * 必须保持 JSON 数组形态，不能拼成逗号字符串。</p>
+     * 必须保持 JSON 数组形态，不能拼成逗号字符串。删除同时清除未执行任务；
+     * 如需停止正在执行的任务，应通过任务控制或批量取消接口操作。</p>
      *
      * @param request 模板删除请求，必须包含至少一个任务模板编码
      */

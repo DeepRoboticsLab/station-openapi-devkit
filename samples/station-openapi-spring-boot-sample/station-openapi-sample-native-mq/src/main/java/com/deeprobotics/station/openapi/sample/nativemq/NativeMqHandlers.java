@@ -24,9 +24,14 @@ public class NativeMqHandlers {
                 message.taskExecuteCode(), message.status(), message.taskProgress());
     }
 
+    /**
+     * 展示结果摘要；业务处理应按幂等键更新结果并合并文件，缺失告警等级不能视为正常。
+     *
+     * @param message SDK 已解析的结果消息，alarmLevel 允许为 null
+     */
     public void handleTaskResult(TaskResultMessage message) {
-        LOG.info("Native MQ task result: idempotentKey={}, fileCount={}",
-                message.idempotentKey(), message.fileList().size());
+        LOG.info("Native MQ task result: idempotentKey={}, fileCount={}, alarmLevel={}",
+                message.idempotentKey(), message.fileList().size(), message.alarmLevel());
     }
 
     public void handleDogAlarm(DogAlarmMessage message) {

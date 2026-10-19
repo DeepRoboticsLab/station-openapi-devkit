@@ -46,6 +46,7 @@ class DangerousOperationCoverageTest {
             "/sample/api/camera/control",
             "/sample/api/camera/reset-ptz",
             "/sample/api/task-template/create",
+            "/sample/api/task-template/switch-status",
             "/sample/api/task-template/delete-by-codes",
             "/sample/api/task/issue",
             "/sample/api/task/control",
@@ -82,7 +83,7 @@ class DangerousOperationCoverageTest {
     private SystemSampleService systemService;
 
     @Test
-    void dangerousAnnotationPinsExactlyTenPaths() {
+    void dangerousAnnotationPinsExactlyElevenPaths() {
         Set<String> actualPaths = new LinkedHashSet<>();
         handlerMapping.getHandlerMethods().forEach((mapping, handlerMethod) -> {
             if (AnnotatedElementUtils.findMergedAnnotation(

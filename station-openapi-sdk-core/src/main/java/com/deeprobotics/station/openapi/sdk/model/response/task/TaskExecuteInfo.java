@@ -27,7 +27,7 @@ public record TaskExecuteInfo(
         String dogCode,
         /** 任务类型：{@code 1} 独立巡检、{@code 2} 联合巡检、{@code 3} 视频巡检。 */
         Integer taskType,
-        /** 执行类型：{@code 1} 立即执行、{@code 2} 定时执行、{@code 3} 周期执行。 */
+        /** 执行类型：{@code 1} 立即执行、{@code 2} 定时执行、{@code 3} 周期执行、{@code 4} 间隔执行。 */
         Integer executeType,
         /** 巡检类型编码，例如例行巡视、专项巡视等；历史数据可能存在旧编码，因此保持字符串。 */
         String patrolType,

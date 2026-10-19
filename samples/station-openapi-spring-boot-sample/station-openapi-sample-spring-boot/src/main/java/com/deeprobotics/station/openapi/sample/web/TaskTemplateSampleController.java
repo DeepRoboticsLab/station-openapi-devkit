@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 任务模板管理的薄 Web 示例，对应 SDK 的 {@code client.taskTemplate()} 分组。
  *
- * <p>创建和删除操作由安全门禁保护，查询操作则直接返回适合 Swagger 展示的结果。</p>
+ * <p>创建、启停和删除操作由安全门禁保护，查询操作则直接返回适合 Swagger 展示的结果。</p>
  */
 @RestController
 @RequestMapping("/sample/api/task-template")
@@ -83,6 +83,39 @@ public class TaskTemplateSampleController {
             @Valid @RequestBody TaskTemplateInputs.Delete input,
             @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
         service.deleteByCodes(input.toSdkRequest(), SampleRequestOptions.from(requestId));
+    }
+
+    /**
+     * 切换任务模板的启用状态，默认由危险操作门禁拦截。
+     *
+     * <p>停用会清除未执行任务，启用不会自动下发；成功后返回 204。</p>
+     *
+     * @param input 任务模板编码和整数启用状态
+     * @param requestId 可选链路标识，不是业务幂等键
+     */
+    @PostMapping("/switch-status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DangerousSampleOperation
+    @Operation(
+            operationId = "taskTemplate.switchStatus",
+            summary = "启停任务模板 / Enable or disable task template",
+            description = "危险操作：平台 v1.3.3 起支持。停用会清除未执行任务；启用后必须再次下发。"
+                    + " Dangerous operation: requires platform v1.3.3 or later. Disabling removes pending tasks;"
+                    + " enabling requires issuing the template again.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "状态已更新 / Status updated"),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "危险操作默认关闭 / Dangerous operation disabled by default",
+                            content = @Content(mediaType = "application/problem+json", examples = {
+                                    @ExampleObject(name = "zh_CN", value = SampleOpenApiExamples.DANGEROUS_ZH),
+                                    @ExampleObject(name = "en_US", value = SampleOpenApiExamples.DANGEROUS_EN)
+                            }))
+            })
+    public void switchStatus(
+            @Valid @RequestBody TaskTemplateInputs.SwitchStatus input,
+            @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
+        service.switchStatus(input.toSdkRequest(), SampleRequestOptions.from(requestId));
     }
 
     @PostMapping("/get-by-code")

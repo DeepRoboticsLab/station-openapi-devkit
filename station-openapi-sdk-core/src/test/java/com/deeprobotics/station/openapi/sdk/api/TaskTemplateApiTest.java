@@ -3,6 +3,7 @@ package com.deeprobotics.station.openapi.sdk.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.deeprobotics.station.openapi.sdk.RequestOptions;
 import com.deeprobotics.station.openapi.sdk.StationOpenApiConfig;
 import com.deeprobotics.station.openapi.sdk.auth.AccessTokenAuthProvider;
 import com.deeprobotics.station.openapi.sdk.auth.Credential;
@@ -23,10 +24,12 @@ import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTempl
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateDeleteRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateGetRequest;
 import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplatePageRequest;
+import com.deeprobotics.station.openapi.sdk.model.request.tasktemplate.TaskTemplateStatusRequest;
 import com.deeprobotics.station.openapi.sdk.model.response.tasktemplate.TaskTemplateInfo;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -54,10 +57,65 @@ class TaskTemplateApiTest {
 
         assertThat(endpointIntents)
                 .containsEntry("/remoteApi/onlySaveTaskModel", OperationIntent.BUSINESS_WRITE)
+                .containsEntry("/remoteApi/switchTaskModelStatus", OperationIntent.BUSINESS_WRITE)
                 .containsEntry("/remoteApi/removeTaskModelByCodes", OperationIntent.BUSINESS_WRITE)
                 .containsEntry("/remoteApi/taskModelByCode", OperationIntent.READ_ONLY)
                 .containsEntry("/remoteApi/modelPage", OperationIntent.READ_ONLY)
-                .hasSize(4);
+                .hasSize(5);
+    }
+
+    @Test
+    void switchStatusSendsIntegerStateAndAcceptsNullDataWithRequestOptions() {
+        RecordingTransport transport = new RecordingTransport().enqueueSuccess(null).enqueueSuccess(null);
+        TaskTemplateApi api = new DefaultTaskTemplateApi(newExecutor(transport));
+
+        api.switchStatus(TaskTemplateStatusRequest.builder().taskCode(" TM-001 ").isEnable(0).build(),
+                RequestOptions.builder().requestId("template-status-001")
+                        .readTimeout(Duration.ofSeconds(2)).callTimeout(Duration.ofSeconds(3)).build());
+        api.switchStatus(TaskTemplateStatusRequest.builder().taskCode("TM-001").isEnable(1).build());
+
+        assertThat(transport.jsonRequests()).hasSize(2);
+        HttpRequest request = transport.jsonRequests().get(0);
+        assertThat(request.url().getPath()).isEqualTo("/remoteApi/switchTaskModelStatus");
+        assertThat(request.headers()).containsEntry("X-Request-Id", "template-status-001");
+        assertThat(request.readTimeout()).isEqualTo(Duration.ofSeconds(2));
+        assertThat(request.callTimeout()).isEqualTo(Duration.ofSeconds(3));
+        assertThat(parseBody(request)).containsExactly(Map.entry("taskCode", "TM-001"), Map.entry("isEnable", 0));
+        assertThat(parseBody(transport.jsonRequests().get(1))).containsEntry("isEnable", 1);
+    }
+
+    @Test
+    void switchStatusRejectsMissingAndInvalidFieldsBeforeIo() {
+        RecordingTransport transport = new RecordingTransport();
+        TaskTemplateApi api = new DefaultTaskTemplateApi(newExecutor(transport));
+
+        for (String taskCode : new String[] {null, "", " "}) {
+            assertThatThrownBy(() -> api.switchStatus(
+                    TaskTemplateStatusRequest.builder().taskCode(taskCode).isEnable(1).build()))
+                    .isInstanceOf(StationOpenApiClientException.class).hasMessageContaining("taskCode");
+        }
+        for (Integer state : new Integer[] {null, -1, 2}) {
+            assertThatThrownBy(() -> api.switchStatus(
+                    TaskTemplateStatusRequest.builder().taskCode("TM-001").isEnable(state).build()))
+                    .isInstanceOf(StationOpenApiClientException.class).hasMessageContaining("isEnable");
+        }
+        assertThat(transport.jsonRequests()).isEmpty();
+    }
+
+    @Test
+    void switchStatusTimeoutIsUnknownAndNeverRetriedEvenWithDefaultRetryOverride() {
+        RecordingTransport transport = new RecordingTransport().enqueueTimeout().enqueueSuccess(null);
+        TaskTemplateApi api = new DefaultTaskTemplateApi(newExecutor(transport));
+
+        assertThatThrownBy(() -> api.switchStatus(
+                TaskTemplateStatusRequest.builder().taskCode("TM-001").isEnable(0).build(),
+                RequestOptions.builder().retryPolicy(RequestOptions.RetryPolicy.DEFAULT).build()))
+                .isInstanceOfSatisfying(StationOpenApiTimeoutException.class, ex -> {
+                    assertThat(ex.resultUnknown()).isTrue();
+                    assertThat(ex.path()).isEqualTo("/remoteApi/switchTaskModelStatus");
+                    assertThat(ex.operation()).isEqualTo("taskTemplate.switchStatus");
+                });
+        assertThat(transport.jsonRequests()).hasSize(1);
     }
 
     @Test

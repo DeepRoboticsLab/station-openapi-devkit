@@ -21,13 +21,14 @@ import com.deeprobotics.station.openapi.sdk.model.response.task.TaskExecuteInfo;
 public interface TaskApi {
 
     /**
-     * 下发已创建的任务模板并生成一次任务执行记录。
+     * 按已创建任务模板的执行计划生成并下发任务。
      *
-     * <p>对应 {@code POST /remoteApi/issue}。成功后返回平台生成的 {@code taskExecuteCode}，
-     * 后续暂停、恢复、终止、批量取消和结果查询都围绕这个执行编码进行。</p>
+     * <p>对应 {@code POST /remoteApi/issue}。立即执行可能返回 {@code taskExecuteCode}，
+     * 定时、周期和间隔计划不保证返回单个执行编码，成功 data 也可能为空。
+     * 后续控制与结果查询使用任务执行记录中的编码，不能用模板编码替代。</p>
      *
      * @param request 任务下发请求，必须包含非空 {@code taskCode}
-     * @return 本次任务执行编码 {@code taskExecuteCode}；平台成功响应未携带 data 时为 {@code null}
+     * @return 平台下发结果文本；立即执行时可为执行编码，成功响应未携带 data 时为 {@code null}
      */
     String issue(TaskIssueRequest request);
 
@@ -39,7 +40,7 @@ public interface TaskApi {
      *
      * @param request 任务下发请求，不能为 {@code null}
      * @param options 本次调用的 requestId、超时或重试覆盖配置；传 {@code null} 时使用客户端默认配置
-     * @return 本次任务执行编码 {@code taskExecuteCode}；平台成功响应未携带 data 时为 {@code null}
+     * @return 平台下发结果文本，含义由执行计划决定；成功响应未携带 data 时为 {@code null}
      */
     String issue(TaskIssueRequest request, RequestOptions options);
 
@@ -69,7 +70,8 @@ public interface TaskApi {
      * 批量取消多个任务执行记录。
      *
      * <p>对应 {@code POST /remoteApi/batchCancelTask}。请求体中的 {@code taskExecuteCodeList}
-     * 必须是 JSON 数组；任一取消失败时平台会直接返回失败。</p>
+     * 必须是 JSON 数组。平台按列表顺序处理，首个失败即停止；已取消的任务不会回滚，
+     * 后续任务尚未处理。收到业务失败或结果未知异常后，应逐项查询状态，不能假设整体未执行。</p>
      *
      * @param request 批量取消请求，必须包含至少一个任务执行编码
      */
@@ -89,7 +91,8 @@ public interface TaskApi {
      * 分页查询任务执行记录。
      *
      * <p>对应 {@code POST /remoteApi/taskPage}。这是只读查询，SDK 对外只使用
-     * {@code pageNo/pageSize}，不发送历史 {@code pageNum}。</p>
+     * {@code pageNo/pageSize}，不发送历史 {@code pageNum}。日期范围筛选计划开始时间；
+     * 省略日期不会自动限定为当月，未设置 {@code showUnExecuted} 时平台默认过滤未执行记录。</p>
      *
      * @param request 任务执行分页查询条件，日期字段按 {@code yyyy-MM-dd} 发送
      * @return 非 null 的任务执行分页数据

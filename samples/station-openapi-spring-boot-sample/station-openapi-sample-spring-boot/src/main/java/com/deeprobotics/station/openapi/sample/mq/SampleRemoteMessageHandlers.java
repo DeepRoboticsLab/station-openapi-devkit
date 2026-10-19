@@ -24,9 +24,17 @@ public class SampleRemoteMessageHandlers {
                 message.taskExecuteCode(), message.status(), message.taskProgress());
     }
 
+    /**
+     * 展示结果消息的业务摘要，方法不保存共享状态，可并发调用。
+     *
+     * <p>实际应用应按幂等键更新识别结果并合并文件列表；alarmLevel 为 null 表示平台未提供，
+     * 不能作为正常等级 0 处理。</p>
+     *
+     * @param message SDK 已解析的结果消息
+     */
     public void handleTaskResult(TaskResultMessage message) {
-        LOG.info("MQ task result: idempotentKey={}, fileCount={}",
-                message.idempotentKey(), message.fileList().size());
+        LOG.info("MQ task result: idempotentKey={}, fileCount={}, alarmLevel={}",
+                message.idempotentKey(), message.fileList().size(), message.alarmLevel());
     }
 
     public void handleDogAlarm(DogAlarmMessage message) {

@@ -33,6 +33,6 @@ Use this checklist after configuring the SDK or Sample to confirm the basic inte
 
 - [ ] File downloads use `Path` or `OutputStream` and never load the complete file into a `byte[]`.
 - [ ] A write or control failure with `resultUnknown=true` is confirmed before any repeat attempt.
-- [ ] The Sample's ten dangerous operations remain locked by default or are enabled only after confirming the target.
+- [ ] The Sample's eleven dangerous operations remain locked by default or are enabled only after confirming the target.
 - [ ] When MQ is required, technical support has supplied the NameServer and confirmed the topic and message permissions.
 - [ ] MQ handlers tolerate duplicate messages and never log the raw message body.

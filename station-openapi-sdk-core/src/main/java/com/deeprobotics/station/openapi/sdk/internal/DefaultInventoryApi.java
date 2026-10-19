@@ -40,7 +40,7 @@ public final class DefaultInventoryApi implements InventoryApi {
     /**
      * EndpointDefinition 是执行器识别接口行为的唯一元数据来源。
      *
-     * <p>{@code OpenApiCoverageTest} 会基于各默认实现中的定义校验 27 个生产接口，因此新增或修改路径时
+     * <p>{@code OpenApiCoverageTest} 会基于各默认实现中的定义校验 28 个生产接口，因此新增或修改路径时
      * 必须同步评估 OpenAPI 契约，不应只改字符串让覆盖测试通过。</p>
      */
     private static final EndpointDefinition PAGE_DOGS =

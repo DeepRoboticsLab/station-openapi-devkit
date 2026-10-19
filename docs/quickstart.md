@@ -12,7 +12,7 @@ Contact your assigned technical support representative to obtain:
 - Either an AppKey and SecretKey pair or an Access Token;
 - The business operations permitted by those credentials.
 
-The platform environment supplied by technical support is compatible with the SDK, so you do not need to choose a platform version. The endpoint may include a context path required by the deployment, but do not append an individual `/remoteApi/*` path.
+Confirm that the target environment supports the features you need: template enable/disable requires platform v1.3.3+, and MQ result alarm levels are available from v1.3.2. The endpoint may include a context path required by the deployment, but do not append an individual `/remoteApi/*` path.
 
 ## 2. Add the SDK to the Project
 
@@ -147,4 +147,4 @@ See [Retries and Result Confirmation](retry-and-idempotency.md) and [File Downlo
 
 ## 7. Run the Complete Sample
 
-To inspect all 27 operations, request parameters, and response structures, run the [Spring Boot Sample](../samples/station-openapi-spring-boot-sample/README.md) in IDEA and use Swagger UI.
+To inspect all 28 operations, request parameters, and response structures, run the [Spring Boot Sample](../samples/station-openapi-spring-boot-sample/README.md) in IDEA and use Swagger UI.

@@ -13,7 +13,7 @@ The counts below include the first attempt:
 | Queries, lists, pages, and status reads | 2 | A second attempt is allowed only for connection failures or timeouts |
 | File downloads | 2 | A failed attempt is never returned as a complete file |
 | Task issue, control, and cancellation | 1 | The platform may already have received the request |
-| Task template creation and deletion | 1 | Platform data may already have changed |
+| Task template creation, status changes, and deletion | 1 | Platform data may already have changed |
 | Device, charging, and camera controls | 1 | A duplicate command may affect field equipment |
 
 HTTP errors, explicit platform business failures, invalid parameters, and response parsing failures are never retried automatically.
@@ -40,9 +40,13 @@ Typical confirmation paths:
 | Original operation | Recommended confirmation |
 |---|---|
 | Task issue, control, or cancellation | Query task executions or wait for a task status message |
-| Task template creation or deletion | Query template details or template pages |
+| Task template creation, status change, or deletion | Query template details or template pages |
 | Quadruped robot control | Query device status and real-time position |
 | Camera or PTZ control | Confirm through device state or an authorized field check |
+
+Batch cancellation runs in list order and stops at the first failure. Completed cancellations are not rolled back, so query individual states even after an explicit business failure.
+
+Disabling a template removes pending tasks; enabling does not issue tasks automatically. After an unknown status-change result, check the template detail `isEnable` field and related executions.
 
 ## 3. requestId
 
