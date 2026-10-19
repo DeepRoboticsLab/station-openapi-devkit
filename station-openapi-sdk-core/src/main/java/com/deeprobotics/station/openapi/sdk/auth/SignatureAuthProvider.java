@@ -15,25 +15,14 @@ import java.util.stream.Collectors;
 /**
  * 签名模式鉴权实现。
  *
- * <p>签名模式请求 body 包含 {@code appKey/timestamp/nonce/sign}。
- * secretKey 只参与 SDK 本地签名副本，绝不能进入最终 body、header、日志或异常。</p>
+ * <p>请求体携带 {@code appKey/timestamp/nonce/sign}；secretKey 仅用于本地签名，不进入请求、日志或异常。</p>
  *
- * <p>该类是重试安全的关键：每次 {@link #authenticate(Map)} 调用都会重新生成 timestamp/nonce/sign。
- * executor 重试时必须重新调用这里，不能复用上一次已经发送过的 body。</p>
+ * <p>每次 {@link #authenticate(Map)} 重新生成 timestamp/nonce/sign，重试时须重新调用。</p>
  */
 public final class SignatureAuthProvider implements AuthProvider {
 
-    /**
-     * 签名模式凭证，必须包含 appKey 和 secretKey。
-     */
     private final Credential credential;
-    /**
-     * 时间源。生产使用系统时间，测试可注入固定时间稳定签名向量。
-     */
     private final SdkClock clock;
-    /**
-     * nonce 生成器。每次鉴权调用都生成新值，避免平台防重放校验拒绝重试请求。
-     */
     private final NonceGenerator nonceGenerator;
 
     /**
@@ -60,14 +49,14 @@ public final class SignatureAuthProvider implements AuthProvider {
 
     @Override
     public AuthenticatedRequest authenticate(Map<String, Object> businessBody) {
-        // 复制业务 map 后再清理鉴权字段，避免客户误传 appKey/sign 时覆盖 SDK 生成值，也避免污染原始请求。
+        // 在副本中清除旧鉴权字段，保留调用方原始数据。
         LinkedHashMap<String, Object> body = MapUtils.copyWithoutNulls(businessBody);
         removeAuthFields(body);
 
         body.put("appKey", credential.appKey());
         body.put("timestamp", String.valueOf(clock.currentTimeMillis()));
         body.put("nonce", requireText(nonceGenerator.generate(), "nonce"));
-        // sign 必须最后写入：签名源包含 appKey/timestamp/nonce，但不包含 sign 本身。
+        // 鉴权字段就绪后再计算签名。
         body.put("sign", sign(body, credential.secretKey()));
         return new AuthenticatedRequest(body, new LinkedHashMap<>());
     }
@@ -103,7 +92,6 @@ public final class SignatureAuthProvider implements AuthProvider {
     }
 
     private static void removeAuthFields(Map<String, Object> body) {
-        // 客户业务字段中如果意外带入鉴权字段，必须由 SDK 重新生成，避免旧 nonce 或伪造 sign 被发出。
         body.remove("appKey");
         body.remove("timestamp");
         body.remove("nonce");
@@ -125,7 +113,6 @@ public final class SignatureAuthProvider implements AuthProvider {
     private static String md5Upper(String source) {
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");
-            // SDK 与平台签名契约均固定 UTF-8；改用系统默认编码会破坏跨环境签名一致性。
             byte[] bytes = digest.digest(source.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(bytes).toUpperCase(Locale.ROOT);
         } catch (NoSuchAlgorithmException ex) {

@@ -13,19 +13,11 @@ import java.util.Objects;
 /**
  * 系统辅助 API 默认实现。
  *
- * <p>系统分组只公开服务器时间查询。它虽然没有业务参数，但仍经过统一执行器，
- * 这样签名模式可以生成 {@code appKey/timestamp/nonce/sign}，Token 模式也可以发送空 JSON body
- * 和 {@code X-Access-Token} header。</p>
+ * <p>时间查询无业务参数：签名模式仅发送鉴权字段，Token 模式发送 {@code {}} 请求体及令牌头。</p>
  */
 public final class DefaultSystemApi implements SystemApi {
 
-    /**
-     * /remoteApi/time 的空业务请求。
-     *
-     * <p>这里刻意返回一个新的空 LinkedHashMap，而不是 {@code null}，因为执行器后续还需要在该 body
-     * 上附加鉴权字段或序列化为 {@code {}}。如果改成 {@code null}，签名模式和 Token 模式都会出现
-     * 请求形态不一致的问题。</p>
-     */
+    /** 每次构造独立的空业务请求体，供后续鉴权和序列化使用。 */
     private static final OpenApiRequest EMPTY_REQUEST = MapUtils::newBody;
     private static final EndpointDefinition GET_TIME_TEXT =
             EndpointDefinition.of("system.getTimeText", "/remoteApi/time", OperationIntent.READ_ONLY);
@@ -48,7 +40,7 @@ public final class DefaultSystemApi implements SystemApi {
 
     @Override
     public String getTimeText(RequestOptions options) {
-        // 服务器时间是 R<String>，SDK 只解包并透传 data，不在 core 内做时间类型转换。
+        // 保留平台时间文本，不转换为本地时间类型。
         return executor.executeRequiredData(GET_TIME_TEXT, EMPTY_REQUEST, new TypeRef<ApiResponse<String>>() {
         }, options);
     }

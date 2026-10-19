@@ -8,8 +8,7 @@ import java.util.Map;
 /**
  * {@code X-Access-Token} 模式鉴权实现。
  *
- * <p>Token 模式只发送该 header，不在请求体中附加签名字段。
- * SDK 仍会主动移除 appKey/timestamp/nonce/sign/secretKey，避免客户误传字段造成排查歧义或泄露风险。</p>
+ * <p>仅通过令牌头鉴权，并从业务请求体移除 appKey/timestamp/nonce/sign/secretKey。</p>
  */
 public final class AccessTokenAuthProvider implements AuthProvider {
 
@@ -18,9 +17,6 @@ public final class AccessTokenAuthProvider implements AuthProvider {
      */
     public static final String ACCESS_TOKEN_HEADER = "X-Access-Token";
 
-    /**
-     * Token 模式凭证，必须只包含 accessToken。
-     */
     private final Credential credential;
 
     /**
@@ -54,7 +50,6 @@ public final class AccessTokenAuthProvider implements AuthProvider {
     }
 
     private static void removeAuthFields(Map<String, Object> body) {
-        // 不让签名字段和 token header 同时出现在一次请求里，保持“二选一”鉴权语义。
         body.remove("appKey");
         body.remove("timestamp");
         body.remove("nonce");

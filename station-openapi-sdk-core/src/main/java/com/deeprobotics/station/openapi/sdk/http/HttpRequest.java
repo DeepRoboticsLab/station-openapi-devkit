@@ -8,36 +8,20 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * transport 可发送的 HTTP 请求快照。
+ * HTTP 传输层使用的不可变请求快照。
  *
- * <p>该对象只包含 executor 已经完成的结果：最终 URI、header、UTF-8 JSON body 和单次调用超时。
- * transport 不应再修改 body，也不应再次追加签名字段。</p>
+ * <p>执行器已完成鉴权和序列化，传输层应原样发送请求头和 UTF-8 JSON 请求体。</p>
  */
 public final class HttpRequest {
 
-    /**
-     * 最终请求 URI，已经包含 endpoint context path 和平台 API path。
-     */
     private final URI url;
-    /**
-     * 最终请求 header。可能包含鉴权 header，日志输出前必须脱敏。
-     */
     private final LinkedHashMap<String, String> headers;
-    /**
-     * 已序列化完成的请求体字节。普通接口和下载接口都使用 JSON 请求体。
-     */
     private final byte[] body;
-    /**
-     * 本次调用读取超时，可能来自全局配置或 RequestOptions 覆盖。
-     */
     private final Duration readTimeout;
-    /**
-     * 本次调用总超时，可能来自全局配置或 RequestOptions 覆盖。
-     */
     private final Duration callTimeout;
 
     /**
-     * 创建不可变 transport 请求快照。
+     * 创建请求快照，复制请求头和请求体以隔离调用方的后续修改。
      *
      * @param url 最终请求 URI
      * @param headers 最终 header；null 按空集合处理，null key/value 会被忽略
@@ -50,14 +34,13 @@ public final class HttpRequest {
             Duration callTimeout) {
         this.url = Objects.requireNonNull(url, "url is required");
         this.headers = copyHeaders(headers);
-        // 防御性复制，避免重试或测试读取时看到调用方后续修改的 body。
         this.body = body == null ? new byte[0] : body.clone();
         this.readTimeout = readTimeout;
         this.callTimeout = callTimeout;
     }
 
     /**
-     * 返回最终请求 URI。
+     * 返回包含 endpoint 上下文路径和平台接口路径的最终 URI。
      *
      * @return 已解析完成的最终 URI
      */
@@ -71,7 +54,6 @@ public final class HttpRequest {
      * @return 请求头的防御性副本
      */
     public LinkedHashMap<String, String> headers() {
-        // header 可能包含 token，调用方输出前应自行脱敏；这里仅保证不可修改内部状态。
         return new LinkedHashMap<>(headers);
     }
 

@@ -9,14 +9,10 @@ import java.util.Objects;
 /**
  * SDK 内部重试策略。
  *
- * <p>策略只决定“最多尝试几次”和“哪些失败可重试”。是否安全重试由 {@link OperationIntent}
- * 的默认次数控制：READ_ONLY/FILE_DOWNLOAD 为 2，写入和控制操作为 1。</p>
+ * <p>{@link OperationIntent} 限定尝试次数：查询/下载最多 2 次，写入/控制 1 次；仅重试连接和超时异常。</p>
  */
 public final class RetryPolicy {
 
-    /**
-     * 当前调用最多尝试次数，包含第一次请求本身。
-     */
     private final int maxAttempts;
 
     private RetryPolicy(int maxAttempts) {
@@ -58,7 +54,6 @@ public final class RetryPolicy {
         if (requestRetryPolicy == RequestOptions.RetryPolicy.NEVER) {
             return never();
         }
-        // RequestOptions 只有 DEFAULT/NEVER，不提供放大写入或控制操作尝试次数的入口。
         return defaultFor(intent);
     }
 
@@ -79,7 +74,6 @@ public final class RetryPolicy {
      * @return 仅在仍有次数且失败是超时或连接异常时返回 {@code true}
      */
     public boolean shouldRetry(int completedAttempt, RuntimeException failure) {
-        // completedAttempt 表示已经失败的第几次尝试；只有还有剩余次数且失败类型可重试才继续。
         return completedAttempt < maxAttempts && isRetriable(failure);
     }
 

@@ -15,15 +15,12 @@ import org.apache.rocketmq.common.message.MessageExt;
 /**
  * 客户侧远程推送订阅入口。
  *
- * <p>该类使用 RocketMQ 原生 client 创建 consumer，但公共 builder 只暴露业务 handler，
- * 不要求客户实现 RocketMQ listener。handler 正常返回即 ack，抛异常则返回重投状态。</p>
+ * <p>使用 RocketMQ 原生客户端订阅消息，调用方只需注册 {@link RemoteMessageHandler}。</p>
  *
- * <p>同一 consumer group 下的多个实例使用 RocketMQ 集群消费语义，消息会在实例间负载均衡，
- * 并不是每个实例各收到一份。如果多个独立客户系统都需要完整消息流，应使用不同 consumer group。</p>
+ * <p>同一消费组的实例分担消息；需要独立接收完整消息流的系统应使用不同消费组。</p>
  *
- * <p>建议把 subscriber 注册为应用级单例，并在 Spring Bean 销毁回调或进程关闭阶段调用 {@link #close()}。
- * 构造对象不会连接 broker，只有 {@link #start()} 才创建并启动真实 consumer。关闭后允许重新启动，
- * 这是为了让容器生命周期具备容错能力，并不建议按消息或业务调用频繁重建 consumer。</p>
+ * <p>建议作为应用级单例管理，在应用退出时调用 {@link #close()}。
+ * 构造时不连接 broker，{@link #start()} 才启动消费，关闭后可重新启动。</p>
  */
 public final class RemoteMessageSubscriber implements AutoCloseable {
 
@@ -49,13 +46,12 @@ public final class RemoteMessageSubscriber implements AutoCloseable {
     }
 
     /**
-     * 启动 RocketMQ push consumer。
+     * 启动 RocketMQ 推送消费者。
      *
-     * <p>当前 consumer 已启动时重复调用会被忽略；{@link #close()} 后再次调用会创建新的 consumer。
-     * 启动失败会包装为 SDK 自己的运行时异常，避免公共签名暴露 RocketMQ 受检异常类型。</p>
+     * <p>已启动时忽略重复调用；{@link #close()} 后可重新启动。
+     * 启动失败抛出 {@link RemoteMessageException}。</p>
      *
-     * <p>至少可以只注册客户关心的 handler；未注册类型仍在订阅表达式内，但收到后会 ack-skip。
-     * 解析失败固定请求重投，不会静默丢弃消息。</p>
+     * <p>未注册处理器的消息确认并跳过；已注册类型解析或处理失败时请求重投。</p>
      */
     public synchronized void start() {
         if (consumer != null) {
@@ -94,10 +90,9 @@ public final class RemoteMessageSubscriber implements AutoCloseable {
     }
 
     /**
-     * 关闭当前 consumer。
+     * 关闭当前消费者。
      *
-     * <p>未启动或已关闭时重复调用不会产生副作用。关闭后对象回到未启动状态，后续可以再次调用
-     * {@link #start()}；正常应用仍应由容器统一管理这个单例的启停。</p>
+     * <p>未启动或已关闭时无操作；关闭后可再次调用 {@link #start()}。</p>
      */
     @Override
     public synchronized void close() {
@@ -120,11 +115,7 @@ public final class RemoteMessageSubscriber implements AutoCloseable {
             if (messages == null || messages.isEmpty()) {
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
-            /*
-             * RocketMQ 可能按批次交付。只要任意一条返回 RECONSUME_LATER，整个批次都会被 broker 重投；
-             * 因此前面已经成功执行的 handler 也可能再次被调用。SDK 不能在这里假装逐条 ack，客户 handler
-             * 必须用 taskExecuteCode/devicePointCode 等业务键实现幂等 upsert。
-             */
+            // 任一消息失败会重投整批，已成功的处理器也可能再次执行，必须按业务键幂等处理。
             for (MessageExt message : messages) {
                 RemoteMessageConsumeResult result = router.route(message.getTags(), message.getBody());
                 if (result == RemoteMessageConsumeResult.RECONSUME_LATER) {

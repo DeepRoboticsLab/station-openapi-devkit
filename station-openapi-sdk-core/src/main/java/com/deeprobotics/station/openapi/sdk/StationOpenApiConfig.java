@@ -7,18 +7,14 @@ import java.time.Duration;
 /**
  * SDK 全局配置快照。
  *
- * <p>配置对象在构造时完成归一化和校验，之后保持不可变。这样后续 executor、auth provider
- * 和 transport 只读取已经确认过的值，不需要在每次请求时重复处理客户输入。</p>
+ * <p>构造时完成归一化和校验，之后保持不可变。</p>
  *
- * <p>安全约束：签名模式和 Token 模式必须二选一；{@code secretKey/accessToken}
- * 只允许保存在内存配置中，任何字符串化输出都必须脱敏。</p>
+ * <p>签名和 Token 鉴权必须二选一；{@code secretKey/accessToken} 仅保存在内存中，输出时须脱敏。</p>
  */
 public final class StationOpenApiConfig {
 
     /**
-     * 客户配置使用的鉴权模式枚举。
-     *
-     * <p>该枚举与 {@code auth} 包中的公共鉴权模式对应，并为配置构造器提供稳定入口。</p>
+     * 客户端配置的鉴权模式，与 {@code auth} 包中的枚举对应。
      */
     public enum AuthMode {
         /**
@@ -30,9 +26,6 @@ public final class StationOpenApiConfig {
          */
         ACCESS_TOKEN(com.deeprobotics.station.openapi.sdk.auth.AuthMode.ACCESS_TOKEN);
 
-        /**
-         * {@code auth} 包中与当前配置值对应的鉴权模式。
-         */
         private final com.deeprobotics.station.openapi.sdk.auth.AuthMode authMode;
 
         AuthMode(com.deeprobotics.station.openapi.sdk.auth.AuthMode authMode) {
@@ -50,52 +43,19 @@ public final class StationOpenApiConfig {
     }
 
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
-    /**
-     * 默认读取超时。查询接口和普通 JSON 接口以较短读超时快速失败；下载场景可用 {@link RequestOptions} 覆盖。
-     */
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(10);
-    /**
-     * 默认调用总超时，约束一次请求从开始到结束的最长时间。
-     */
     private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofSeconds(15);
 
-    /**
-     * OpenAPI 服务根地址，构造时已经去除尾部斜杠。
-     *
-     * <p>允许包含部署 context path，例如 {@code https://station.example.com/web}。</p>
-     */
     private final String endpoint;
-    /**
-     * 已解析完成的鉴权模式。该值保证是签名模式或 Token 模式中的一种，不存在混配状态。
-     */
     private final AuthMode authMode;
-    /**
-     * 签名模式 appKey。Token 模式下为 {@code null}。
-     */
     private final String appKey;
-    /**
-     * 签名模式 secretKey。只保存在内存中供签名使用，不能进入请求体、日志、异常或 {@code toString()}。
-     */
     private final String secretKey;
-    /**
-     * Token 模式 accessToken。只用于构造鉴权 header，字符串化输出必须脱敏。
-     */
     private final String accessToken;
-    /**
-     * 默认连接超时，传给底层 HTTP 实现用于建连阶段。
-     */
     private final Duration connectTimeout;
-    /**
-     * 默认读取超时，单次请求可通过 {@link RequestOptions#readTimeout()} 覆盖。
-     */
     private final Duration readTimeout;
-    /**
-     * 默认调用总超时，单次请求可通过 {@link RequestOptions#callTimeout()} 覆盖。
-     */
     private final Duration callTimeout;
 
     private StationOpenApiConfig(Builder builder) {
-        // endpoint 先归一化，避免后续 EndpointResolver 处理重复尾斜杠时出现多套规则。
         this.endpoint = normalizeEndpoint(builder.endpoint);
         this.authMode = resolveAuthMode(builder.appKey, builder.secretKey, builder.accessToken);
         this.appKey = blankToNull(builder.appKey);
@@ -125,7 +85,7 @@ public final class StationOpenApiConfig {
     }
 
     /**
-     * 返回已经校验过的鉴权模式。调用方不需要再判断凭证是否混配。
+     * 返回校验后唯一生效的鉴权模式。
      *
      * @return 唯一生效的鉴权模式
      */
@@ -145,8 +105,7 @@ public final class StationOpenApiConfig {
     /**
      * 返回签名模式 secretKey。
      *
-     * <p>这是敏感值访问器。不要把返回值写入日志、异常、监控标签或持久化明文；
-     * 需要输出配置摘要时使用已脱敏的 {@link #toString()}。</p>
+     * <p>返回值为敏感信息，禁止记录或明文持久化；配置摘要使用已脱敏的 {@link #toString()}。</p>
      *
      * @return 签名模式 secretKey，或 Token 模式下的 {@code null}
      */
@@ -157,8 +116,7 @@ public final class StationOpenApiConfig {
     /**
      * 返回 Token 模式 accessToken。
      *
-     * <p>这是敏感值访问器。不要记录、回显或以明文持久化返回值；
-     * 需要输出配置摘要时使用已脱敏的 {@link #toString()}。</p>
+     * <p>返回值为敏感信息，禁止记录或明文持久化；配置摘要使用已脱敏的 {@link #toString()}。</p>
      *
      * @return Token 模式 accessToken，或签名模式下的 {@code null}
      */
@@ -195,7 +153,7 @@ public final class StationOpenApiConfig {
 
     @Override
     public String toString() {
-        // appKey 本身不是密钥，保留有助于客户排查配置；secretKey/token 永远脱敏。
+        // appKey 用于识别应用；密钥和令牌脱敏。
         return "StationOpenApiConfig{"
                 + "endpoint='" + endpoint + '\''
                 + ", authMode=" + authMode
@@ -238,7 +196,7 @@ public final class StationOpenApiConfig {
         if (uri.getRawFragment() != null) {
             throw new StationOpenApiClientException("endpoint fragment is not supported");
         }
-        // 只去掉尾部斜杠，不拆分 host/port/contextPath；最终 path 拼接由 EndpointResolver 统一完成。
+        // 保留部署上下文路径，接口路径由 EndpointResolver 拼接。
         String normalized = trimmed;
         while (normalized.length() > 1 && normalized.endsWith("/")) {
             normalized = normalized.substring(0, normalized.length() - 1);
@@ -247,7 +205,6 @@ public final class StationOpenApiConfig {
     }
 
     private static AuthMode resolveAuthMode(String appKey, String secretKey, String accessToken) {
-        // SDK 禁止混配两种凭证，确保每个客户端只有一种明确的鉴权模式。
         boolean hasAppKey = hasText(appKey);
         boolean hasSecretKey = hasText(secretKey);
         boolean hasAccessToken = hasText(accessToken);
@@ -294,36 +251,15 @@ public final class StationOpenApiConfig {
     }
 
     /**
-     * 收集客户输入并构建不可变 {@link StationOpenApiConfig} 的配置构造器。
+     * 不可变客户端配置的构造器。
      */
     public static final class Builder {
-        /**
-         * 客户输入的 endpoint 原始值，最终由 {@link StationOpenApiConfig} 构造器归一化。
-         */
         private String endpoint;
-        /**
-         * 签名模式 appKey 原始值，构造时会 trim 并和 secretKey 成对校验。
-         */
         private String appKey;
-        /**
-         * 签名模式 secretKey 原始值，构造时只做内存保存和脱敏约束。
-         */
         private String secretKey;
-        /**
-         * Token 模式 accessToken 原始值，构造时会与签名凭证互斥校验。
-         */
         private String accessToken;
-        /**
-         * 默认连接超时，未配置时使用 SDK 设计默认值。
-         */
         private Duration connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-        /**
-         * 默认读取超时，未配置时使用 SDK 设计默认值。
-         */
         private Duration readTimeout = DEFAULT_READ_TIMEOUT;
-        /**
-         * 默认调用总超时，未配置时使用 SDK 设计默认值。
-         */
         private Duration callTimeout = DEFAULT_CALL_TIMEOUT;
 
         private Builder() {

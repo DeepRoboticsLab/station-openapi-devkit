@@ -22,35 +22,29 @@ import java.util.Objects;
 /**
  * SDK 内部统一 JSON 编解码器。
  *
- * <p>所有请求序列化和响应反序列化都应通过这里完成，避免不同模块各自 new ObjectMapper
- * 导致时间格式、未知字段策略或 null 字段策略不一致。签名源来自请求 {@code toMap()}，
- * JSON 序列化必须保持同一份 body，不允许在 transport 层再次加工字段。</p>
+ * <p>默认配置统一时间格式、忽略未知响应字段并省略 null 字段。
+ * 请求序列化与签名使用同一份请求体，传输层不再加工字段。</p>
  */
 public final class JsonCodec {
 
     /**
-     * 平台接口约定的日期时间字符串格式。不要改成 ISO-8601，否则签名源和 JSON body 都会变化。
+     * 平台日期时间格式，同时影响签名和请求体。
      */
     private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     /**
-     * 平台接口中的本地时间字段使用 HH:mm:ss，例如周期任务开始/结束时间。
+     * 平台本地时间格式，用于周期任务的开始和结束时间等字段。
      */
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final JsonCodec DEFAULT = new JsonCodec(createMapper());
 
-    /**
-     * SDK 专用 ObjectMapper。
-     *
-     * <p>该实例只在 JsonCodec 内部使用；对外返回副本，避免客户修改全局序列化规则。</p>
-     */
     private final ObjectMapper objectMapper;
 
     /**
      * 使用指定 mapper 创建 codec。
      *
-     * <p>传入 mapper 的生命周期由调用方管理；codec 不修改其配置，但后续读写直接使用该实例。
-     * 如需 SDK 默认的时间和兼容配置，应优先使用 {@link #defaultCodec()}。</p>
+     * <p>直接使用传入实例，不修改其配置；调用方负责其生命周期和并发使用。
+     * 如需 SDK 默认配置，使用 {@link #defaultCodec()}。</p>
      *
      * @param objectMapper JSON mapper，不能为 {@code null}
      */
@@ -68,7 +62,7 @@ public final class JsonCodec {
     }
 
     /**
-     * 序列化为 JSON 字符串。异常会转成 SDK 自己的序列化异常，便于上层统一补充 path/requestId。
+     * 序列化为 JSON 字符串，失败时抛出 {@link StationOpenApiSerializationException}。
      *
      * @param value 待序列化对象
      * @return JSON 字符串
@@ -83,7 +77,7 @@ public final class JsonCodec {
     }
 
     /**
-     * 序列化为 UTF-8 字节。签名设计固定 UTF-8，HTTP body 也固定 UTF-8，避免客户机器默认编码差异。
+     * 序列化为 UTF-8 JSON 字节，与签名编码一致。
      *
      * @param value 待序列化对象
      * @return UTF-8 JSON 字节
@@ -101,7 +95,6 @@ public final class JsonCodec {
      * @return 反序列化结果
      */
     public <T> T read(String value, Class<T> type) {
-        // 便捷读取普通类，主要用于简单响应、测试和内部二次反序列化。
         Objects.requireNonNull(type, "type is required");
         return read(value == null ? null : value.getBytes(StandardCharsets.UTF_8), objectMapper.constructType(type));
     }
@@ -115,7 +108,6 @@ public final class JsonCodec {
      * @return 反序列化结果
      */
     public <T> T read(String value, TypeRef<T> typeRef) {
-        // 字符串入口统一转换为 UTF-8 字节，避免不同平台默认编码影响解析。
         return read(value == null ? null : value.getBytes(StandardCharsets.UTF_8), typeRef);
     }
 
@@ -128,18 +120,16 @@ public final class JsonCodec {
      * @return 反序列化结果
      */
     public <T> T read(byte[] value, TypeRef<T> typeRef) {
-        // 泛型响应解包必须走 TypeRef，否则 PageResult<T> 等嵌套类型会丢失元素类型。
         Objects.requireNonNull(typeRef, "typeRef is required");
         return read(value, objectMapper.constructType(typeRef.type()));
     }
 
     /**
-     * 返回默认配置的 mapper 副本。修改副本不会影响 codec 后续读写。
+     * 返回当前 mapper 的独立副本，修改副本不影响本 codec。
      *
      * @return 当前 mapper 的独立副本
      */
     public ObjectMapper objectMapper() {
-        // 返回副本，防止外部修改全局 mapper 后影响 SDK 所有请求。
         return objectMapper.copy();
     }
 

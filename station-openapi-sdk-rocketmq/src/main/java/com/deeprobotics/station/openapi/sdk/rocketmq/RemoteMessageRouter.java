@@ -11,10 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 独立于 RocketMQ listener 的远程推送消息路由器。
+ * 按 tag 解析并分派远程推送消息，不依赖 RocketMQ 监听器类型。
  *
- * <p>该类不依赖 RocketMQ 原生 listener，因此可以在单元测试中直接用 tag 和 body 验证解析规则。
- * {@link RemoteMessageSubscriber} 只负责把 RocketMQ 的 {@code MessageExt} 转成这里的输入。</p>
+ * <p>可由 {@link RemoteMessageSubscriber} 或自定义消费适配层调用。</p>
  */
 public final class RemoteMessageRouter {
 
@@ -35,7 +34,7 @@ public final class RemoteMessageRouter {
     }
 
     /**
-     * 创建路由器构造器。未注册的消息类型会被 ack-skip。
+     * 创建路由器构造器。未注册处理器的消息会被确认并跳过。
      *
      * @return 新的路由器构造器
      */
@@ -46,15 +45,15 @@ public final class RemoteMessageRouter {
     /**
      * 按 RocketMQ tag 解析并分派消息。
      *
-     * <p>未知 tag、未注册 handler、以及坐标 tag 都会直接 ack-skip。当前 SDK 只路由
-     * {@link RemoteMessageTags#supportedTags()} 返回的四类消息；平台新增其他 tag 时不会因缺少 handler 而反复重投。</p>
+     * <p>仅处理 {@link RemoteMessageTags#supportedTags()} 中的四类消息。
+     * 未知 tag、坐标 tag 或未注册处理器的消息均确认并跳过。</p>
      *
-     * <p>已支持 tag 的 JSON 解析失败或 handler 抛异常会返回 {@link RemoteMessageConsumeResult#RECONSUME_LATER}。
-     * SDK 不提供“解析失败后静默 ack 丢弃”的开关。</p>
+     * <p>已注册处理器的消息解析失败，或处理器抛出异常时，返回
+     * {@link RemoteMessageConsumeResult#RECONSUME_LATER} 请求重投。</p>
      *
      * @param tag RocketMQ 消息 tag
-     * @param body UTF-8 消息体，可为 JSON object 或外层再包一层的 JSON string
-     * @return ack 或稍后重投结果
+     * @param body UTF-8 消息体，可为 JSON 对象或再次编码为 JSON 字符串的对象
+     * @return 确认或稍后重投
      */
     public RemoteMessageConsumeResult route(String tag, byte[] body) {
         if (!RemoteMessageTags.isSupportedTag(tag)) {
@@ -92,11 +91,7 @@ public final class RemoteMessageRouter {
             handler.handle(message);
             return RemoteMessageConsumeResult.ACK;
         } catch (Exception ex) {
-            /*
-             * 解析失败或客户 handler 失败都不能 ack，否则客户无法通过 RocketMQ 重投恢复。
-             * 日志只记录 tag、异常类型和脱敏后的 message，不打印原始 body 或 Jackson source 片段，
-             * 避免后续消息体新增敏感字段时泄露。
-             */
+            // 失败时保留重投机会；日志仅记录 tag、异常类型和脱敏消息，不记录原始消息体。
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -115,10 +110,7 @@ public final class RemoteMessageRouter {
             throw new RemoteMessageException("RocketMQ message body is blank");
         }
 
-        /*
-         * 平台消息体可能是普通 JSON object，也可能是外层再包一层的 JSON string。
-         * 因此这里统一先解开 string-wrapped JSON，再按目标模型解析。
-         */
+        // 兼容平台将 JSON 对象再次编码为 JSON 字符串的格式。
         if (payload.startsWith("\"")) {
             String unwrapped = jsonCodec.read(payload, String.class);
             payload = unwrapped == null ? "" : unwrapped.trim();
@@ -145,7 +137,7 @@ public final class RemoteMessageRouter {
         }
 
         /**
-         * 注入消息解析 codec，主要用于测试或客户已有兼容 Jackson 配置的高级场景。
+         * 设置消息解析器，默认使用 {@link JsonCodec#defaultCodec()}。
          *
          * @param jsonCodec 非 null 的 JSON 编解码器
          * @return 当前构造器
@@ -203,7 +195,7 @@ public final class RemoteMessageRouter {
         }
 
         /**
-         * 构建不依赖真实 broker 的路由器，可直接用于单元测试或自定义消费适配层。
+         * 构建路由器，不连接 broker。
          *
          * @return 使用当前 handler 配置的路由器
          */

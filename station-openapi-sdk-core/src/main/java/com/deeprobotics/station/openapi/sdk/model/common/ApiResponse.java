@@ -10,30 +10,18 @@ import java.util.Objects;
 /**
  * 平台统一响应 {@code R<T>} 的 SDK 表示。
  *
- * <p>平台业务成功需要同时满足 {@code success=true} 和 {@code code=200}。
- * 历史接口中可能出现 success 为 true 但 code 非 200 的场景，SDK 必须按业务失败处理。</p>
+ * <p>业务成功须同时满足 {@code success=true} 和 {@code code=200}，两者不一致时按失败处理。</p>
  *
- * <p>{@code toString()} 不直接输出 data 内容。data 可能包含摄像机密码、文件路径或未来敏感字段，
- * 调试时只暴露是否存在，具体内容由调用方显式读取。</p>
+ * <p>{@code toString()} 仅标记 data 是否存在，避免输出摄像机密码等敏感内容。</p>
+ *
+ * @param <T> 业务数据类型
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class ApiResponse<T> {
 
-    /**
-     * 平台响应的 success 字段。必须为 true 才代表业务成功。
-     */
     private final Boolean success;
-    /**
-     * 平台响应的 code 字段。SDK 约定只有 200 才代表业务成功。
-     */
     private final Integer code;
-    /**
-     * 平台响应的 msg 字段。SDK 会把它带入业务异常；是否直接展示应由应用的国际化和错误提示策略决定。
-     */
     private final String msg;
-    /**
-     * 平台响应的 data 字段。具体类型由调用方传入的 {@code TypeRef<ApiResponse<T>>} 决定。
-     */
     private final T data;
 
     /**
@@ -54,7 +42,7 @@ public final class ApiResponse<T> {
     }
 
     /**
-     * 创建测试或内部使用的标准成功响应。
+     * 创建标准成功响应。
      *
      * @param <T> 业务数据类型
      * @param data 成功响应携带的业务数据
@@ -83,7 +71,7 @@ public final class ApiResponse<T> {
     }
 
     /**
-     * 返回平台业务消息。
+     * 返回平台业务消息。失败时会带入业务异常，展示文案由应用决定。
      *
      * @return 平台 msg 原值
      */
@@ -106,20 +94,16 @@ public final class ApiResponse<T> {
      * @return 同时满足两个条件时返回 {@code true}
      */
     public boolean isSuccessful() {
-        // 兼容 success 和 code 不完全一致的响应；SDK 必须同时检查两个字段。
         return Boolean.TRUE.equals(success) && Integer.valueOf(200).equals(code);
     }
 
     /**
-     * 按 SDK 统一规则解包业务数据。
-     *
-     * <p>这里不处理 HTTP status；HTTP 非 2xx 在 executor 中先转换为
-     * {@code StationOpenApiHttpException}。进入这里说明响应体已按 {@code R<T>} 解析。</p>
+     * 解包业务数据，业务失败时抛出 {@link StationOpenApiBusinessException}。HTTP 状态由执行器先行校验。
      *
      * @param path 本次请求的 {@code /remoteApi/*} 路径
      * @param requestId 本次请求链路标识
      * @param operation SDK 业务操作标识
-     * @return 业务成功时的 data
+     * @return 业务成功时的 data，可为 {@code null}
      */
     public T unwrapOrThrow(String path, String requestId, String operation) {
         if (!isSuccessful()) {
@@ -134,7 +118,6 @@ public final class ApiResponse<T> {
                 + "success=" + success
                 + ", code=" + code
                 + ", msg='" + Redactor.redact(msg) + '\''
-                // 避免日志中展开完整 data；客户要看业务数据应在自己的代码中显式输出并自行脱敏。
                 + ", data=" + (data == null ? "null" : "<present>")
                 + '}';
     }

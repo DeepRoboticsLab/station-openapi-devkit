@@ -35,7 +35,7 @@ public final class StationOpenApiClients {
     }
 
     /**
-     * 客户侧构造器，只暴露稳定的 SDK 配置和 core transport 抽象。
+     * 客户端构造器，支持默认或自定义 HTTP 传输实现。
      */
     public static final class Builder {
         private final StationOpenApiConfig.Builder configBuilder = StationOpenApiConfig.builder();
@@ -125,8 +125,7 @@ public final class StationOpenApiClients {
         /**
          * 显式注入 HTTP transport，并跳过默认 SPI 自动发现。
          *
-         * <p>注入对象的生命周期始终由客户管理。关闭构建出的客户端不会关闭该 transport，
-         * 因而可以安全复用客户统一管理的连接池、代理或 TLS 配置。</p>
+         * <p>注入对象由调用方管理，关闭客户端不会关闭该 transport。</p>
          *
          * @param transport 客户创建并负责关闭的 HTTP transport
          * @return 当前构造器
@@ -140,12 +139,12 @@ public final class StationOpenApiClients {
         }
 
         /**
-         * 构建已经完成鉴权、transport、执行器和七个业务分组装配的可执行客户端。
+         * 构建客户端，装配鉴权、传输实现及七个业务 API 分组。
          *
          * <p>未显式注入 transport 时，classpath 中必须恰好存在一个
          * {@link HttpTransportProvider}。缺失、冲突或损坏的 SPI 注册会在此处直接失败。</p>
          *
-         * @return 已完成全链路装配的客户端
+         * @return 已装配的客户端
          */
         public StationOpenApiClient build() {
             StationOpenApiConfig config = configBuilder.build();
@@ -164,11 +163,7 @@ public final class StationOpenApiClients {
             HttpTransport discoveredTransport = createTransport(provider,
                     new HttpTransportSettings(config.connectTimeout()));
             try {
-                /*
-                 * provider.create() 成功返回即发生所有权转移：从这里开始 transport 由 SDK 持有。
-                 * 正常装配后交给 DefaultStationOpenApiClient.close()；若七个业务分组装配中途失败，
-                 * assemblyFailure 必须立即关闭，不能把 provider 创建的线程池/连接池遗留给客户进程。
-                 */
+                // SPI 创建的 transport 由 SDK 负责关闭，装配失败时也须释放。
                 return assemble(config, authProvider, discoveredTransport, true);
             } catch (RuntimeException | ServiceConfigurationError | LinkageError failure) {
                 throw assemblyFailure(discoveredTransport, failure);
@@ -202,7 +197,6 @@ public final class StationOpenApiClients {
 
         private static StationOpenApiClient assemble(StationOpenApiConfig config, AuthProvider authProvider,
                 HttpTransport transport, boolean transportOwnedBySdk) {
-            // 显式注入路径始终传 false：即使装配失败也不能擅自关闭客户可能共享的 transport。
             OpenApiExecutor executor = new OpenApiExecutor(config, authProvider, transport);
             return new DefaultStationOpenApiClient(executor, transport, transportOwnedBySdk);
         }
