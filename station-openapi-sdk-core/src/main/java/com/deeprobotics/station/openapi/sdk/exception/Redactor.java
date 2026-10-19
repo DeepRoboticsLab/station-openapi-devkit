@@ -7,8 +7,8 @@ import java.util.regex.Pattern;
 /**
  * SDK 统一脱敏工具。
  *
- * <p>任何可能进入日志、异常消息、断言消息或 {@code toString()} 的字符串都应经过这里。
- * 目标不是完整 JSON 解析，而是覆盖客户排障中常见的 JSON 字段、header、key=value 和 Bearer 形态。</p>
+ * <p>用于受控异常上下文中常见的 JSON 字段、header、key=value 和 Bearer 形态。
+ * 该工具无法识别没有字段名标记的凭据，不能用来保证任意 HTTP/MQ 报文安全；原始报文应直接省略。</p>
  */
 public final class Redactor {
 
@@ -54,8 +54,7 @@ public final class Redactor {
     /**
      * 对字符串进行尽力而为的脱敏。
      *
-     * <p>该方法必须容忍非 JSON、半截响应体和异常 message，因为 HTTP 非 2xx 或下载失败时
-     * executor 只会截取有限片段用于异常上下文。</p>
+     * <p>允许非 JSON、半截字符串和异常 message，但只保证匹配已知敏感字段的形态。</p>
      *
      * @param value 可能包含敏感字段的任意字符串，允许为 {@code null}
      * @return 已替换已知敏感值的字符串
@@ -65,7 +64,7 @@ public final class Redactor {
             return value;
         }
         /*
-         * JSON 字符串必须先处理。异常响应会先截成有限片段，截断点可能落在敏感值或转义字符中；
+         * JSON 字符串必须先处理。调用方提供的文本可能已经截断，截断点可能落在敏感值或转义字符中；
          * 要求闭合引号的正则会在这种输入上失配并泄露完整 token。这里用小型扫描器识别字段边界，
          * 找不到值的闭合引号时直接把输入末尾全部视为敏感值，按 fail-closed 原则处理。
          */

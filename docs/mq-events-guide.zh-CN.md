@@ -72,6 +72,8 @@ Listener 不需要自行解析 JSON，也不要记录原始消息 body。SDK Rou
 
 `uploadHttpRemoteDevicePos` 不在 SDK 当前支持的消息范围内。实时坐标通过 `client.dog().getPosition(...)` 查询。
 
+本体告警通过 `DogAlarmMessage.alarmTime()` 读取发生时间，保留平台的 `yyyy-MM-dd HH:mm:ss` 字符串，不携带时区。旧消息缺失或显式 null 时返回 `null`，不以消费时间补齐。原四参构造器继续可用，告警时间默认为 `null`。HTTP 告警分页的 `DogAlarmInfo.alarmTime()` 已支持同名字段，类型为 `LocalDateTime`。
+
 任务结果的 `TaskResultMessage.alarmLevel()` 从平台 v1.3.2 起提供：`"0"` 正常、`"1"` 警告、`"2"` 一般、`"3"` 严重、`"4"` 紧急。SDK 同时接受 JSON 整数和字符串，并保留未知编码；旧平台、缺失或显式 null 均返回 `null`，不能把未知等级当作正常。`confidence()` 同样保持可空字符串。
 
 增加告警等级后保留原有 20 参数构造器，旧代码无需补参数；使用旧构造器创建的消息告警等级为 `null`。同一点位可能先收到采集结果，再收到识别结果；后一次消息可能更新置信度和告警等级，文件列表仍按业务键合并。

@@ -4,7 +4,7 @@ package com.deeprobotics.station.openapi.sdk.exception;
  * HTTP 层非 2xx 响应。
  *
  * <p>这类异常表示请求已经收到 HTTP 响应，但 status code 不在成功范围内。
- * {@code bodySnippet} 只应是经过长度限制和脱敏的响应片段，不能把完整响应体塞进异常。</p>
+ * 只保留状态码和请求上下文，不保留响应体；错误页或响应片段可能包含没有字段名标记的凭据。</p>
  */
 public class StationOpenApiHttpException extends StationOpenApiException {
 
@@ -15,11 +15,11 @@ public class StationOpenApiHttpException extends StationOpenApiException {
      * @param path 失败接口 path
      * @param requestId 请求链路 ID
      * @param operation SDK 操作标识
-     * @param bodySnippet 已限制长度的响应体片段；进入异常对象前仍会统一脱敏
+     * @param bodySnippet 为兼容原构造器保留的参数；内容被忽略，不进入异常
      */
     public StationOpenApiHttpException(int statusCode, String path, String requestId, String operation,
             String bodySnippet) {
-        super("HTTP request failed: " + bodySnippet, path, requestId, operation, statusCode, false);
+        super("HTTP request failed", path, requestId, operation, statusCode, false);
     }
 
     /**
@@ -29,11 +29,11 @@ public class StationOpenApiHttpException extends StationOpenApiException {
      * @param path 失败接口 path
      * @param requestId 请求链路 ID
      * @param operation SDK 操作标识
-     * @param bodySnippet 已限制长度的响应体片段；进入异常对象前仍会统一脱敏
+     * @param bodySnippet 为兼容原构造器保留的参数；内容被忽略，不进入异常
      * @param cause 读取或处理错误响应时的原始原因
      */
     public StationOpenApiHttpException(int statusCode, String path, String requestId, String operation,
             String bodySnippet, Throwable cause) {
-        super("HTTP request failed: " + bodySnippet, path, requestId, operation, statusCode, false, cause);
+        super("HTTP request failed", path, requestId, operation, statusCode, false, cause);
     }
 }

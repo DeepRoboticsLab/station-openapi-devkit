@@ -116,7 +116,7 @@ class OpenApiExecutorTest {
     }
 
     @Test
-    void truncatedHttpErrorSnippetDoesNotExposeCompleteSensitiveValue() {
+    void httpErrorBodyIsOmittedInsteadOfDependingOnFieldRedaction() {
         String secret = "raw-access-token-at-snippet-boundary";
         String jsonPrefix = "{\"accessToken\":\"";
         String body = "x".repeat(4096 - jsonPrefix.length() - secret.length())
@@ -129,7 +129,8 @@ class OpenApiExecutorTest {
                 new TypeRef<ApiResponse<String>>() {
                 }, RequestOptions.builder().requestId("request-redaction-boundary").build()))
                 .isInstanceOf(StationOpenApiHttpException.class)
-                .hasMessageContaining("<redacted>")
+                .hasMessageContaining("code=500")
+                .hasMessageNotContaining("x".repeat(64))
                 .hasMessageNotContaining(secret);
     }
 
@@ -268,7 +269,7 @@ class OpenApiExecutorTest {
                 .hasMessageContaining("/remoteApi/result/resource")
                 .hasMessageContaining("result.downloadResource")
                 .hasMessageContaining("request-download-1")
-                .hasMessageContaining("download failed");
+                .hasMessageNotContaining("download failed");
     }
 
     @Test

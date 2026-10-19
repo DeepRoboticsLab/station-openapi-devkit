@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiBusinessException;
+import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiSerializationException;
 import com.deeprobotics.station.openapi.sdk.model.common.ApiResponse;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
@@ -20,6 +23,26 @@ import org.junit.jupiter.api.Test;
 class JsonCodecTest {
 
     private final JsonCodec json = JsonCodec.defaultCodec();
+
+    @Test
+    void parseFailureDoesNotEchoUnlabelledResponseValueInExceptionChain() {
+        assertThatThrownBy(() -> json.read("\"synthetic-response-value\"", Integer.class))
+                .isInstanceOfSatisfying(StationOpenApiSerializationException.class, failure -> {
+                    StringWriter trace = new StringWriter();
+                    failure.printStackTrace(new PrintWriter(trace));
+                    assertThat(trace.toString()).doesNotContain("synthetic-response-value");
+                });
+    }
+
+    @Test
+    void writeFailureDoesNotEchoPropertyValuesInExceptionChain() {
+        assertThatThrownBy(() -> json.write(new UnserializableValue()))
+                .isInstanceOfSatisfying(StationOpenApiSerializationException.class, failure -> {
+                    StringWriter trace = new StringWriter();
+                    failure.printStackTrace(new PrintWriter(trace));
+                    assertThat(trace.toString()).doesNotContain("synthetic-property-value");
+                });
+    }
 
     @Test
     void jacksonCodecIgnoresUnknownResponseFields() {
@@ -91,6 +114,12 @@ class JsonCodecTest {
 
         public void setName(String name) {
             this.name = name;
+        }
+    }
+
+    static final class UnserializableValue {
+        public String getValue() {
+            throw new IllegalStateException("synthetic-property-value");
         }
     }
 }

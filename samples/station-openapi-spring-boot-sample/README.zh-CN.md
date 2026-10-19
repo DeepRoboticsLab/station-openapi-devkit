@@ -214,7 +214,7 @@ sample:
 - 文件下载使用 `StreamingResponseBody` 流式输出。
 - 校验和 SDK 异常返回 `application/problem+json`。
 - 分页请求使用 `pageNo`，不要使用 `pageNum`。
-- 摄像机查询结果不会向 Swagger 返回密码。
+- 摄像机查询结果不会向 Swagger 返回密码；含账号、查询参数、片段或无法解析的流地址会置为 `null`，避免 URL 内的凭据泄露。无这些内容的流地址正常展示，SDK 原始访问器保持可用。
 - `resultUnknown=true` 表示写入或控制结果尚未确认，应先查询状态，不要立即重复调用。
 
 错误消息支持 `zh_CN` 和 `en_US`。查询参数 `lang` 的优先级高于 `Accept-Language`，未指定时使用中文。

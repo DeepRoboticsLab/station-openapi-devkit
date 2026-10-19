@@ -72,6 +72,8 @@ Fixed topic: `httpRemote`.
 
 `uploadHttpRemoteDevicePos` is not part of the message scope supported by the SDK. Query real-time position through `client.dog().getPosition(...)`.
 
+Read the alarm occurrence time through `DogAlarmMessage.alarmTime()`. It retains the platform's `yyyy-MM-dd HH:mm:ss` string without a time zone. Omitted or explicit null values remain `null`; the SDK does not substitute consumption time. The original four-argument constructor remains available and leaves the time null. HTTP alarm pagination already exposes the same field as `DogAlarmInfo.alarmTime()`, using `LocalDateTime`.
+
 `TaskResultMessage.alarmLevel()` is available from platform v1.3.2: `"0"` normal, `"1"` warning, `"2"` general, `"3"` serious, and `"4"` emergency. The SDK accepts JSON integers and strings and preserves unknown codes. Older messages, omitted values, and explicit nulls yield `null`, which must not be treated as normal. `confidence()` also remains a nullable string.
 
 The original 20-argument constructor remains available and sets the alarm level to `null`. A point may produce an initial collection result followed by an analysis result that updates confidence and alarm level; merge file lists using the business key.

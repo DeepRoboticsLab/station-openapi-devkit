@@ -164,7 +164,7 @@ class OkHttpDownloadTest {
                     "type", 1), output, RequestOptions.builder().requestId("download-http-error").build()))
                     .isInstanceOf(StationOpenApiHttpException.class)
                     .hasMessageContaining("code=503")
-                    .hasMessageContaining("download server unavailable")
+                    .hasMessageNotContaining("download server unavailable")
                     .hasMessageContaining("/remoteApi/result/resource");
         }
         assertThat(output.size()).isZero();

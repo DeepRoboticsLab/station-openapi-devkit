@@ -19,6 +19,8 @@ import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,7 +48,8 @@ class CameraStreamSecurityTest {
     void cameraPasswordIsAbsentFromViewJsonAndOpenApiSchema() throws Exception {
         CameraStreamInfo source = new CameraStreamInfo(
                 "Front camera", "camera-001", "dog-001", "vendor", "model", "patrol", "main",
-                "192.0.2.10", "554", "viewer", "camera-secret", "1", "main", "rtsp://example.invalid/live");
+                "192.0.2.10", "554", "viewer", "camera-secret", "1", "main",
+                "rtsp://viewer:synthetic-stream-credential@example.invalid/live");
         CameraStreamView safeView = CameraStreamView.from(source);
         when(inventoryService.pageStreams(any(), any()))
                 .thenReturn(new PageResult<>(List.of(safeView), 1L, 1L, 10L, 1L));
@@ -62,6 +65,7 @@ class CameraStreamSecurityTest {
                 .andReturn().getResponse().getContentAsString(UTF_8);
         assertThat(pageStreamsResponseJson)
                 .doesNotContain("password")
+                .doesNotContain("synthetic-stream-credential")
                 .doesNotContain("camera-secret");
 
         String openApiJson = mockMvc.perform(get("/v3/api-docs"))
@@ -70,5 +74,23 @@ class CameraStreamSecurityTest {
         JsonNode cameraStreamSchema = objectMapper.readTree(openApiJson)
                 .path("components").path("schemas").path("CameraStreamView");
         assertThat(cameraStreamSchema.path("properties").has("password")).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "rtsp://viewer:synthetic-stream-credential@example.invalid/live",
+            "https://example.invalid/live?ticket=synthetic-stream-credential",
+            "https://example.invalid/live#synthetic-stream-credential",
+            "rtsp://viewer:synthetic stream credential@example.invalid/live"
+    })
+    void viewOmitsUrlsThatMayCarryCredentials(String streamUrl) throws Exception {
+        CameraStreamInfo source = new CameraStreamInfo(
+                "Front camera", "camera-001", "dog-001", null, null, null, null,
+                "192.0.2.10", "554", "viewer", "camera-secret", "1", "main", streamUrl);
+        CameraStreamView view = CameraStreamView.from(source);
+        assertThat(view.streamUrl()).isNull();
+        assertThat(objectMapper.writeValueAsString(view)).doesNotContain("synthetic-stream-credential");
+        assertThat(view.toString()).doesNotContain("synthetic-stream-credential");
+        assertThat(source.streamUrl()).isEqualTo(streamUrl);
     }
 }

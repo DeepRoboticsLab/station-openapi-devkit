@@ -77,7 +77,8 @@ public final class JsonCodec {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException ex) {
-            throw new StationOpenApiSerializationException(ex.getOriginalMessage(), ex);
+            // Jackson 的消息及原因链可能包含属性值，不能只靠字段名脱敏；保留失败类型即可。
+            throw new StationOpenApiSerializationException("Failed to serialize JSON: " + ex.getClass().getSimpleName());
         }
     }
 
@@ -149,7 +150,8 @@ public final class JsonCodec {
         try {
             return objectMapper.readValue(value, javaType);
         } catch (IOException ex) {
-            throw new StationOpenApiSerializationException(ex.getMessage(), ex);
+            // 类型/格式错误会在异常消息中回显原值，故不保留原始消息或原因链。
+            throw new StationOpenApiSerializationException("Failed to parse JSON: " + ex.getClass().getSimpleName());
         }
     }
 

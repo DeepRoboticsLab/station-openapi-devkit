@@ -36,7 +36,7 @@ public final class HttpResponse {
     public HttpResponse(int statusCode, Map<String, List<String>> headers, byte[] body) {
         this.statusCode = statusCode;
         this.headers = copyHeaders(headers);
-        // 响应体可能会进入异常片段，executor 会截断并脱敏；这里先保证不可变。
+        // 响应体只用于协议解析，不进入 HTTP 异常；这里复制以保证快照不可变。
         this.body = body == null ? new byte[0] : body.clone();
     }
 

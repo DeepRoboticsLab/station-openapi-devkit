@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * {@code password} 是真实响应字段，SDK 必须能反序列化，但 {@link #toString()} 永远不会输出明文密码。</p>
  *
  * <p>未知字段会被忽略，以兼容平台新增摄像机厂商、码流或播放参数。内置 {@link #toString()}
- * 只自动隐藏 {@code password}；用户名、IP、端口和拉流地址仍会输出，调用方若把这些连接信息也视为敏感数据，
+ * 隐藏 {@code password} 和可能含凭据的 {@code streamUrl}；用户名、IP、端口仍会输出，调用方若把这些连接信息也视为敏感数据，
  * 不应直接记录整个对象。</p>
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -73,13 +73,13 @@ public record CameraStreamInfo(
          */
         String bitstream,
         /**
-         * 播放或拉流地址。
+         * 播放或拉流地址。可能携带账号密码或访问令牌，不能直接记录；toString 始终隐藏整个地址。
          */
         String streamUrl) {
 
     @Override
     public String toString() {
-        // password 是平台真实返回字段，但调试字符串只展示脱敏占位；其他连接元数据仍按字段值输出。
+        // 拉流 URL 可在 user-info 或查询参数中携带凭据，与 password 一起整体隐藏。
         return "CameraStreamInfo{"
                 + "name='" + name + '\''
                 + ", code='" + code + '\''
@@ -94,7 +94,7 @@ public record CameraStreamInfo(
                 + ", password=<redacted>"
                 + ", channel='" + channel + '\''
                 + ", bitstream='" + bitstream + '\''
-                + ", streamUrl='" + streamUrl + '\''
+                + ", streamUrl=<redacted>"
                 + '}';
     }
 }

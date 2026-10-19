@@ -8,6 +8,10 @@ This is the current GitHub source version. It has not been released as a formal 
 
 ### SDK
 
+- Adds nullable string `alarmTime` to robot alarm MQ messages, matching the platform publisher and retaining the original four-argument constructor.
+- Aligns signature blank-character handling with the platform, fixing verification failures for ideographic spaces and NBSP without changing business request bodies.
+- Omits response bodies from HTTP exceptions and raw Jackson messages/cause chains from JSON exceptions, retaining failure types and request context.
+- Hides both passwords and complete stream URLs in camera model `toString()` output; original accessors remain available.
 - Adds `taskTemplate().switchStatus(...)` for platform v1.3.3+, bringing HTTP coverage to 28 operations after checking current documentation and backend sources.
 - Adds robot posture commands for lying down (15) and standing up (16), retaining raw command codes.
 - Adds nullable string `alarmLevel` to task-result MQ messages (platform v1.3.2+), accepting numeric/string values and retaining the original constructor.
@@ -22,6 +26,8 @@ This is the current GitHub source version. It has not been released as a formal 
 
 ### Spring Boot Sample
 
+- Both MQ examples display the alarm occurrence time without substituting the current time for missing values.
+- Camera views omit stream URLs containing user-info, query parameters, fragments, or invalid syntax to avoid exposing embedded credentials.
 - Requires a JSON integer for template status, preventing fractional values from being truncated into control commands; JSON parsing errors return localized ProblemDetail without echoing input.
 - Adds template status Swagger documentation, SDK calls, bilingual validation, and default protection, bringing protected operations to 11; both MQ examples display the alarm level.
 - Uses Spring Boot 3.5.16 and JDK 17.

@@ -37,8 +37,14 @@ public class SampleRemoteMessageHandlers {
                 message.idempotentKey(), message.fileList().size(), message.alarmLevel());
     }
 
+    /**
+     * 展示本体告警发生时间；旧消息缺失时保留未知，不使用消费时间替代。
+     *
+     * @param message SDK 告警消息，alarmTime 是平台本地时间文本，不携带时区
+     */
     public void handleDogAlarm(DogAlarmMessage message) {
-        LOG.info("MQ dog alarm: dogCode={}, alarmCode={}", message.dogCode(), message.alarmCode());
+        LOG.info("MQ dog alarm: dogCode={}, alarmCode={}, alarmTime={}",
+                message.dogCode(), message.alarmCode(), message.alarmTime());
     }
 
     public void handleRoute(RouteMessage message) {

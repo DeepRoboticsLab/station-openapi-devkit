@@ -214,7 +214,7 @@ This switch prevents accidental operations in the Sample only. Your own APIs sti
 - Downloads use `StreamingResponseBody`.
 - Validation and SDK errors return `application/problem+json`.
 - Pagination requests use `pageNo`, never `pageNum`.
-- Camera query responses never expose passwords through Swagger.
+- Camera query responses never expose passwords through Swagger. Stream URLs containing user-info, query parameters, fragments, or invalid syntax become `null` to avoid exposing embedded credentials. Other stream URLs remain visible, and the SDK retains its original accessors.
 - `resultUnknown=true` means a write or control result has not been confirmed. Query the state before repeating the operation.
 
 Error messages support `zh_CN` and `en_US`. The `lang` query parameter overrides `Accept-Language`; Chinese is used when no language is specified.

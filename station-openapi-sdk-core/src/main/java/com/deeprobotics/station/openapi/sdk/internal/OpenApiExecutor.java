@@ -4,7 +4,6 @@ import com.deeprobotics.station.openapi.sdk.RequestOptions;
 import com.deeprobotics.station.openapi.sdk.StationOpenApiConfig;
 import com.deeprobotics.station.openapi.sdk.auth.AuthenticatedRequest;
 import com.deeprobotics.station.openapi.sdk.auth.AuthProvider;
-import com.deeprobotics.station.openapi.sdk.exception.Redactor;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiBusinessException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiException;
@@ -28,7 +27,6 @@ import com.deeprobotics.station.openapi.sdk.retry.RetryPolicy;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -59,11 +57,6 @@ public final class OpenApiExecutor {
      * 默认期望平台返回 JSON；文件下载成功时平台会返回二进制内容，但错误仍可能是 JSON。
      */
     private static final String ACCEPT_JSON = "application/json";
-    /**
-     * HTTP 错误体进入异常时的最大截断长度，避免大响应体污染日志。
-     */
-    private static final int BODY_SNIPPET_BYTES = 4096;
-
     /**
      * 已归一化的 OpenAPI endpoint。真正请求 URI 由 {@link EndpointResolver} 与接口 path 组合。
      */
@@ -327,7 +320,7 @@ public final class OpenApiExecutor {
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
             throw new StationOpenApiHttpException(statusCode, endpointDefinition.path(), requestId,
-                    endpointDefinition.operation(), bodySnippet(response.body()));
+                    endpointDefinition.operation(), null);
         }
 
         ApiResponse<T> apiResponse;
@@ -373,7 +366,7 @@ public final class OpenApiExecutor {
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
             throw new StationOpenApiHttpException(statusCode, endpointDefinition.path(), requestId,
-                    endpointDefinition.operation(), bodySnippet(response.body()));
+                    endpointDefinition.operation(), null);
         }
         if (isJsonContentType(response)) {
             ApiResponse<Object> apiResponse;
@@ -533,19 +526,6 @@ public final class OpenApiExecutor {
                 .callTimeout(effective.callTimeout())
                 .retryPolicy(effective.retryPolicy())
                 .build();
-    }
-
-    private static String bodySnippet(byte[] body) {
-        if (body == null || body.length == 0) {
-            return "";
-        }
-        // HTTP 错误体只保留有限片段，避免异常过大；返回前再统一脱敏。
-        int length = Math.min(body.length, BODY_SNIPPET_BYTES);
-        String snippet = new String(body, 0, length, StandardCharsets.UTF_8);
-        if (body.length > BODY_SNIPPET_BYTES) {
-            snippet = snippet + "...";
-        }
-        return Redactor.redact(snippet);
     }
 
     private static String sdkVersion() {

@@ -34,9 +34,14 @@ public class NativeMqHandlers {
                 message.idempotentKey(), message.fileList().size(), message.alarmLevel());
     }
 
+    /**
+     * 展示平台记录的告警发生时间，旧消息缺失时不补当前时间。
+     *
+     * @param message SDK 告警消息，alarmTime 是不携带时区的本地时间文本，允许为 null
+     */
     public void handleDogAlarm(DogAlarmMessage message) {
-        LOG.info("Native MQ dog alarm: dogCode={}, alarmCode={}",
-                message.dogCode(), message.alarmCode());
+        LOG.info("Native MQ dog alarm: dogCode={}, alarmCode={}, alarmTime={}",
+                message.dogCode(), message.alarmCode(), message.alarmTime());
     }
 
     public void handleRoute(RouteMessage message) {

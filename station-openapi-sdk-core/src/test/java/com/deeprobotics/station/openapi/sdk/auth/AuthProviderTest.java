@@ -27,6 +27,33 @@ class AuthProviderTest {
     private static final String SECRET_KEY = "kQwIOrYvnXmSDkwEiFngrKidMcdrgKor";
 
     @Test
+    void signingSkipsTheSameBlankStringsAsPlatformWithoutChangingBusinessBody() {
+        SignatureAuthProvider provider = new SignatureAuthProvider(
+                Credential.signature("app", "synthetic-key"), fixedClock("1000"), fixedNonce("nonce"));
+        // 平台 Hutool 5.7.20 会跳过这些空白值；签名向量不含 dogName，业务 JSON 仍保留原值。
+        for (String blank : List.of("", " \t\r\n", "\u00a0", "\u202f", "\u3000", "\ufeff", "\u202a", "\0")) {
+            LinkedHashMap<String, Object> body = new LinkedHashMap<>();
+            body.put("dogName", blank);
+            AuthenticatedRequest request = provider.authenticate(body);
+            assertThat(request.body().get("sign")).isEqualTo("092E362BD812EDEDE5886DF91A24A27E");
+            assertThat(request.body().get("dogName")).isEqualTo(blank);
+        }
+    }
+
+    @Test
+    void signingPreservesNonBlankControlCharactersAndMixedWhitespace() {
+        SignatureAuthProvider provider = new SignatureAuthProvider(
+                Credential.signature("app", "synthetic-key"), fixedClock("1000"), fixedNonce("nonce"));
+        LinkedHashMap<String, Object> body = new LinkedHashMap<>();
+        body.put("dogName", "\u0001");
+        assertThat(provider.authenticate(body).body().get("sign"))
+                .isEqualTo("B4D68C86AA9AC2C5A96A8163305281D9");
+        body.put("dogName", "A\u3000");
+        assertThat(provider.authenticate(body).body().get("sign"))
+                .isEqualTo("6CCE89CC24DEAC07113893E5C94AE5D7");
+    }
+
+    @Test
     void stationOpenApiConfigNestedAuthModeCanBridgeToAuthPackageMode() {
         assertThat(StationOpenApiConfig.AuthMode.SIGNATURE.toAuthMode()).isEqualTo(AuthMode.SIGNATURE);
         assertThat(StationOpenApiConfig.AuthMode.ACCESS_TOKEN.toAuthMode()).isEqualTo(AuthMode.ACCESS_TOKEN);

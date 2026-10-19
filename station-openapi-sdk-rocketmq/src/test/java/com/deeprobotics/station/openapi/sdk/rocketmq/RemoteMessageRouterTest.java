@@ -181,7 +181,9 @@ class RemoteMessageRouterTest {
                   "dogCode":"DOG-001",
                   "dogName":"X30-1",
                   "alarmCode":90003,
-                  "alarmContent":"机器人远离路网"
+                  "alarmContent":"机器人远离路网",
+                  "alarmTime":"2026-01-31 16:06:23",
+                  "futureField":"ignored"
                 }
                 """));
 
@@ -189,6 +191,24 @@ class RemoteMessageRouterTest {
         assertThat(captured.get()).isNotNull();
         assertThat(captured.get().alarmCode()).isEqualTo("90003");
         assertThat(captured.get().alarmContent()).isEqualTo("机器人远离路网");
+        assertThat(captured.get().alarmTime()).isEqualTo("2026-01-31 16:06:23");
+    }
+
+    @Test
+    void historicalDogAlarmsKeepMissingTimeUnknown() {
+        AtomicReference<DogAlarmMessage> captured = new AtomicReference<>();
+        RemoteMessageRouter router = RemoteMessageRouter.builder().onDogAlarm(captured::set).build();
+        for (String body : List.of(
+                "{\"dogCode\":\"DOG-001\",\"alarmCode\":\"90003\"}",
+                "{\"dogCode\":\"DOG-001\",\"alarmCode\":\"90003\",\"alarmTime\":null}")) {
+            assertThat(router.route(RemoteMessageTags.TAG_DOG_ALARM, bytes(body)))
+                    .isEqualTo(RemoteMessageConsumeResult.ACK);
+            assertThat(captured.get().alarmTime()).isNull();
+            assertThat(captured.get().alarmCode()).isEqualTo("90003");
+        }
+        DogAlarmMessage legacy = new DogAlarmMessage("DOG-001", "X30-1", "90003", "机器人远离路网");
+        assertThat(legacy.alarmTime()).isNull();
+        assertThat(legacy.alarmContent()).isEqualTo("机器人远离路网");
     }
 
     @Test

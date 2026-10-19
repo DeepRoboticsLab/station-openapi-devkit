@@ -109,7 +109,7 @@ class InventoryApiTest {
                                 "password", "camera-secret",
                                 "channel", "1",
                                 "bitstream", "main",
-                                "streamUrl", "rtsp://camera/1")),
+                                "streamUrl", "rtsp://viewer:synthetic-stream-credential@camera/1")),
                         "total", 1L))
                 .enqueueSuccess(page(
                         List.of(linkedMapOf(
@@ -209,12 +209,15 @@ class InventoryApiTest {
         assertThat(dogs.pageSize()).isEqualTo(30L);
         assertThat(streams.records()).hasSize(1);
         assertThat(streams.records().get(0).password()).isEqualTo("camera-secret");
+        assertThat(streams.records().get(0).streamUrl())
+                .isEqualTo("rtsp://viewer:synthetic-stream-credential@camera/1");
         assertThat(streams.pageNo()).isNull();
         assertThat(streams.pageSize()).isNull();
         assertThat(streams.pages()).isNull();
         assertThat(streams.total()).isEqualTo(1L);
         assertThat(streams.records().get(0).toString())
                 .contains("password=<redacted>")
+                .doesNotContain("synthetic-stream-credential")
                 .doesNotContain("camera-secret");
 
         assertThat(transport.downloadRequests()).isEmpty();

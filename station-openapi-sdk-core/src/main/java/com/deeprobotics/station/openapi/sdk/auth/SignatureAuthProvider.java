@@ -115,8 +115,11 @@ public final class SignatureAuthProvider implements AuthProvider {
         if (value == null) {
             return false;
         }
-        // 平台签名规则忽略空白字符串；该值仍可按业务字段原样保留在请求 body 中。
-        return !(value instanceof String text && text.trim().isEmpty());
+        // 与平台 Hutool StrUtil.isBlankIfStr 的字符集合保持一致；trim/isBlank 均不等价。
+        // 仅影响签名参与字段，不改业务 body，也不剥除非空字符串首尾字符。
+        return !(value instanceof String text && text.chars().allMatch(character ->
+                Character.isWhitespace(character) || Character.isSpaceChar(character)
+                        || character == '\ufeff' || character == '\u202a' || character == 0));
     }
 
     private static String md5Upper(String source) {
