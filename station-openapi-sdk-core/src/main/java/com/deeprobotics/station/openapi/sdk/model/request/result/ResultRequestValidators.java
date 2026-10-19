@@ -16,8 +16,7 @@ final class ResultRequestValidators {
     /**
      * 校验必填文本字段并去除首尾空白。
      *
-     * <p>用于 {@code taskExecuteCode} 和 {@code filePath}。校验失败时不会发送 HTTP 请求；Path 下载重载
-     * 即使已经创建本次调用的临时文件，也会在异常路径中将其清理。</p>
+     * <p>用于 {@code taskExecuteCode} 和 {@code filePath}。校验失败时不会发送 HTTP 请求。</p>
      */
     static String requireText(String fieldName, String value) {
         if (value == null || value.trim().isEmpty()) {

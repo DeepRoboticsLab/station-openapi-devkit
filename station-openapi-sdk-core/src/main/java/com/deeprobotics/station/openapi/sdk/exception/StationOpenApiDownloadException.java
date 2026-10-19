@@ -3,9 +3,8 @@ package com.deeprobotics.station.openapi.sdk.exception;
 /**
  * 文件下载失败异常。
  *
- * <p>下载的失败面比普通 JSON 请求多：远端可能返回 JSON 错误体，也可能边下载边中断，
- * 还可能在最终写入客户 OutputStream 时失败。写入客户输出流失败时设置 {@code resultUnknown=true}，
- * 因为调用方可能已经收到部分字节。</p>
+ * <p>用于下载响应无效或输出流写入失败。{@code resultUnknown=true} 表示调用方输出可能不完整，
+ * 应丢弃不完整输出后重新下载。连接和超时失败仍使用对应的传输异常和超时异常。</p>
  */
 public class StationOpenApiDownloadException extends StationOpenApiException {
 

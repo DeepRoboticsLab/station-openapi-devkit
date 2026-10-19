@@ -25,7 +25,7 @@ public class StationOpenApiException extends RuntimeException {
      */
     private final Integer code;
     /**
-     * 控制/写入类操作在超时或连接中断后是否可能已经生效。
+     * 执行结果是否未确认，或下载输出是否可能不完整。
      */
     private final boolean resultUnknown;
 
@@ -56,7 +56,7 @@ public class StationOpenApiException extends RuntimeException {
      * @param requestId 请求链路 ID
      * @param operation SDK 操作标识
      * @param code HTTP status 或平台业务 code
-     * @param resultUnknown 操作结果是否可能已经生效但尚未得到确认
+     * @param resultUnknown 执行结果是否未确认，或下载输出是否可能不完整
      */
     protected StationOpenApiException(String message, String path, String requestId, String operation, Integer code,
             boolean resultUnknown) {
@@ -71,7 +71,7 @@ public class StationOpenApiException extends RuntimeException {
      * @param requestId 请求链路 ID
      * @param operation SDK 操作标识
      * @param code HTTP status 或平台业务 code
-     * @param resultUnknown 操作结果是否可能已经生效但尚未得到确认
+     * @param resultUnknown 执行结果是否未确认，或下载输出是否可能不完整
      * @param cause 原始原因；进入异常对象前会统一脱敏
      */
     protected StationOpenApiException(String message, String path, String requestId, String operation, Integer code,
@@ -122,10 +122,13 @@ public class StationOpenApiException extends RuntimeException {
     }
 
     /**
-     * 结果是否可能已经在平台或设备侧生效但 SDK 未收到确认。
+     * 本次调用是否存在无法确认的执行结果或不完整输出。
      *
      * <p>执行器处理写操作、任务控制和设备控制的超时/连接中断时会设为 {@code true}。客户应先查询状态
      * 或等待 MQ 事件，不应直接重试。</p>
+     *
+     * <p>下载的连接、超时或输出失败也会设为 {@code true}，表示可能已交付部分字节。
+     * 调用方应丢弃不完整输出后重新下载，不应向同一输出追加重试结果。</p>
      *
      * @return 结果无法确认时为 {@code true}
      */

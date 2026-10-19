@@ -2,7 +2,7 @@
 
 **Language:** English | [简体中文](retry-and-idempotency.zh-CN.md)
 
-The SDK prioritizes preventing duplicate commands. Queries and downloads may make at most two attempts for specific network failures. Operations that modify data or control devices make only one attempt.
+The SDK prioritizes preventing duplicate commands. Queries may make at most two attempts for connection failures or timeouts. Downloads, writes, and controls make only one attempt.
 
 ## 1. Default Attempt Counts
 
@@ -11,14 +11,14 @@ The counts below include the first attempt:
 | Operation type | Maximum attempts | Behavior |
 |---|---:|---|
 | Queries, lists, pages, and status reads | 2 | A second attempt is allowed only for connection failures or timeouts |
-| File downloads | 2 | A failed attempt is never returned as a complete file |
+| File downloads | 1 | Bytes go directly to the caller; failure may leave partial output |
 | Task issue, control, and cancellation | 1 | The platform may already have received the request |
 | Task template creation, status changes, and deletion | 1 | Platform data may already have changed |
 | Device, charging, and camera controls | 1 | A duplicate command may affect field equipment |
 
 HTTP errors, explicit platform business failures, invalid parameters, and response parsing failures are never retried automatically.
 
-`RequestOptions.RetryPolicy.NEVER` can disable the default retry for a query or download, but no per-call option can force retries for write or control operations.
+`RequestOptions.RetryPolicy.NEVER` disables query retries. No per-call option can enable retries for downloads, writes, or controls.
 
 ## 2. resultUnknown
 
@@ -47,6 +47,8 @@ Typical confirmation paths:
 Batch cancellation runs in list order and stops at the first failure. Completed cancellations are not rolled back, so query individual states even after an explicit business failure.
 
 Disabling a template removes pending tasks; enabling does not issue tasks automatically. After an unknown status-change result, check the template detail `isEnable` field and related executions.
+
+Download connection failures, timeouts, and output failures also report `resultUnknown=true`, meaning output may be incomplete. The SDK does not track how many bytes were written. Discard incomplete output before starting a new download; querying platform state or waiting for MQ cannot recover those bytes. See [File Downloads](file-download-guide.md).
 
 ## 3. requestId
 

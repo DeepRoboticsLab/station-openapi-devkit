@@ -141,7 +141,7 @@ public class StationConnectionService {
 - 所有 SDK 异常都继承 `StationOpenApiException`，可记录其 `requestId`、`operation`、`code` 和 `resultUnknown`。
 - 不要记录完整请求体、响应体或凭证。
 - 写入或控制操作失败且 `resultUnknown=true` 时，先查询状态或等待 MQ 消息，再决定是否重新执行。
-- 文件下载使用 `Path` 或 `OutputStream` 接口。
+- 文件下载使用 `OutputStream`，只尝试一次；失败时可能留下部分输出。
 
 详细行为分别见[重试与结果确认](retry-and-idempotency.zh-CN.md)和[文件下载](file-download-guide.zh-CN.md)。
 

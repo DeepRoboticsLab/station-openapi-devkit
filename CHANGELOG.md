@@ -6,6 +6,21 @@
 
 This is the current GitHub source version. It has not been released as a formal version and is not available as a public Maven Central artifact.
 
+### Breaking changes: direct streaming downloads
+
+- Removes both `ResultApi.downloadResource(request, Path[, options])` overloads. Only the `OutputStream` overloads remain; existing callers must migrate and recompile.
+- Streams directly from HTTP to the caller's output with an 8 KiB buffer. The SDK no longer creates temporary files, buffers a complete file, or manages local directories, replacement, and cleanup.
+- Downloads make exactly one attempt, including with `RequestOptions.RetryPolicy.DEFAULT`. Connection, timeout, or output failures may leave partial output and report `resultUnknown=true`; discard incomplete output before starting a new download. Ordinary queries retain their existing retry behavior.
+- The caller owns and closes the output stream. To save a file, replace the old `Path` call with:
+
+```java
+try (OutputStream output = Files.newOutputStream(target)) {
+    client.result().downloadResource(request, output, options);
+}
+```
+
+`Files.newOutputStream` creates or truncates the target immediately and requires an existing parent directory. File permissions, overwrite policy, and partial-file cleanup now belong to the caller. Spring Boot's `StreamingResponseBody` forwards bytes as they arrive; a failure after the HTTP response is committed can no longer become a complete ProblemDetail response. See the [download guide](docs/file-download-guide.md).
+
 ### SDK
 
 - Adds nullable string `alarmTime` to robot alarm MQ messages, matching the platform publisher and retaining the original four-argument constructor.
@@ -19,7 +34,7 @@ This is the current GitHub source version. It has not been released as a formal 
 - Provides seven API groups with 28 Station OpenAPI HTTP operations.
 - Supports Access Token and AppKey/SecretKey signature authentication.
 - Provides unified pagination, exceptions, request IDs, timeouts, and controlled retries.
-- Supports streaming downloads through `Path` and `OutputStream`.
+- Supports direct streaming downloads through caller-owned `OutputStream` instances.
 - Provides optional RocketMQ routing, message models, and a native Subscriber.
 - Supports four RocketMQ message types: task status, inspection results, quadruped robot alarms, and inspection routes.
 - Provides a normal OkHttp dependency path and a fallback artifact for dependency conflicts.

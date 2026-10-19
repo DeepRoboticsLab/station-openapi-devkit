@@ -9,7 +9,7 @@ import java.util.Objects;
 /**
  * SDK 内部重试策略。
  *
- * <p>{@link OperationIntent} 限定尝试次数：查询/下载最多 2 次，写入/控制 1 次；仅重试连接和超时异常。</p>
+ * <p>{@link OperationIntent} 限定尝试次数：查询最多 2 次，下载/写入/控制 1 次；仅重试连接和超时异常。</p>
  */
 public final class RetryPolicy {
 
@@ -26,7 +26,7 @@ public final class RetryPolicy {
      * 根据操作意图创建 SDK 默认策略。
      *
      * @param intent 接口操作意图
-     * @return 查询/下载最多两次、写入/控制一次的策略
+     * @return 查询最多两次、下载/写入/控制一次的策略
      */
     public static RetryPolicy defaultFor(OperationIntent intent) {
         return new RetryPolicy(Objects.requireNonNull(intent, "intent is required").defaultMaxAttempts());
@@ -44,7 +44,7 @@ public final class RetryPolicy {
     /**
      * 把客户请求级开关与接口安全边界合并为内部策略。
      *
-     * <p>{@code DEFAULT} 只恢复接口自身的默认次数，不会把写入或控制操作放大为多次尝试。</p>
+     * <p>{@code DEFAULT} 只恢复接口自身的默认次数，不会开启下载、写入或控制操作的重试。</p>
      *
      * @param requestRetryPolicy 请求级重试开关
      * @param intent 接口操作意图

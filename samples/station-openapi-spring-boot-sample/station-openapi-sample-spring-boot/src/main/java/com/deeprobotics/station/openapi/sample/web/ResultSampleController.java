@@ -27,8 +27,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * 巡检结果查询与资源下载的薄 Web 示例，对应 SDK 的 {@code client.result()} 分组。
  *
- * <p>Controller 使用 {@link StreamingResponseBody}，不把完整文件读入内存。SDK 为保证重试安全，
- * 会将每次网络尝试写入磁盘临时文件，成功后再复制到 Servlet 输出流。</p>
+ * <p>通过 {@link StreamingResponseBody} 将平台数据直接转发到 Servlet 输出流，不暂存、不重试。
+ * 响应提交后若下载中断，客户端可能收到部分文件，无法再转换为完整 ProblemDetail 响应。</p>
  */
 @RestController
 @RequestMapping("/sample/api/result")

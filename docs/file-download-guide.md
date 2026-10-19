@@ -2,19 +2,9 @@
 
 **Language:** English | [简体中文](file-download-guide.zh-CN.md)
 
-The Station OpenAPI resource download operation returns a binary stream, not a normal JSON response. The SDK can save the result to a `Path` or write it to an `OutputStream`.
+The Station OpenAPI resource download operation returns a binary stream. Pass an `OutputStream` to receive it directly. The SDK uses an 8 KiB buffer, performs no filesystem operations, and never buffers the complete file.
 
-## 1. Choose a Download Method
-
-| Scenario | Method |
-|---|---|
-| Save to a local disk or mounted directory | `Path` |
-| Return the file to a browser through Spring MVC | `OutputStream` |
-| Forward the file to your own streaming storage | `OutputStream` |
-
-Do not read the complete file into a `byte[]`, because large files can consume substantial heap memory.
-
-## 2. Save to a Path
+## 1. Download to an OutputStream
 
 `filePath` must come from a platform query result or a RocketMQ task result. It is not a path on the customer application's local filesystem.
 
@@ -24,8 +14,7 @@ ResourceDownloadRequest request = ResourceDownloadRequest.builder()
         .type(ResourceDownloadRequest.Type.RESULT_RESOURCE)
         .build();
 
-Path target = Path.of("downloads", "inspection-result.jpg");
-Path saved = client.result().downloadResource(request, target);
+client.result().downloadResource(request, outputStream);
 ```
 
 Resource types:
@@ -35,9 +24,22 @@ Resource types:
 | `ResourceDownloadRequest.Type.MAP_FILE` | Map file |
 | `ResourceDownloadRequest.Type.RESULT_RESOURCE` | Inspection image or another result resource |
 
-The SDK isolates failed attempts with a temporary file and creates the target file only after a complete download.
+The caller owns and closes the output stream. The SDK makes one attempt, even with `RetryPolicy.DEFAULT`. Connection failures, timeouts, and output failures report `resultUnknown=true`: output may be incomplete. Discard that output before restarting; never append a new attempt to it. HTTP errors and unexpected content types are checked before any file bytes are written, and JSON errors are parsed into SDK exceptions.
 
-## 3. Write to an OutputStream
+## 2. Save a File in Your Application
+
+If your application needs a local file, open its stream yourself:
+
+```java
+Path target = Path.of("downloads", "inspection-result.jpg");
+try (OutputStream output = Files.newOutputStream(target)) {
+    client.result().downloadResource(request, output);
+}
+```
+
+This requires an existing, writable parent directory and immediately creates or truncates the target. Your application manages paths, permissions, overwrite policy, and incomplete-file cleanup. The SDK does not require a writable disk when forwarding to another stream. Avoid using a `ByteArrayOutputStream` for large files because it holds the entire file in memory.
+
+## 3. Forward Through Spring MVC
 
 Spring MVC can use `StreamingResponseBody` to write the SDK stream directly to the HTTP response:
 
@@ -46,7 +48,7 @@ StreamingResponseBody body = outputStream ->
         client.result().downloadResource(request, outputStream, options);
 ```
 
-The caller creates and closes the `OutputStream`; the SDK never closes it. If the connection is interrupted, the output may contain only partial bytes and must not be treated as a complete file.
+Spring owns the Servlet output stream; the SDK never closes it. Bytes are forwarded as they arrive. If the response has already been committed when a failure occurs, it cannot be replaced with a complete ProblemDetail response; the client must not treat partial output as a complete file.
 
 See these complete Spring MVC examples:
 

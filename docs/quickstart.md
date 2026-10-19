@@ -141,7 +141,7 @@ These classes build explicit SDK requests and call the public APIs without any a
 - Every SDK exception extends `StationOpenApiException`. You may log its `requestId`, `operation`, `code`, and `resultUnknown`.
 - Never log complete request bodies, response bodies, or credentials.
 - If a write or control operation fails with `resultUnknown=true`, query the state or wait for an MQ message before deciding whether to repeat it.
-- Download files through the `Path` or `OutputStream` APIs.
+- Download files through `OutputStream`. Downloads make one attempt and may leave partial output on failure.
 
 See [Retries and Result Confirmation](retry-and-idempotency.md) and [File Downloads](file-download-guide.md) for detailed behavior.
 

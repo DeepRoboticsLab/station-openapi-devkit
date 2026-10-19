@@ -8,7 +8,7 @@ import java.time.Duration;
  *
  * <p>覆盖本次调用的超时、请求 ID 和重试开关，不影响客户端全局配置。</p>
  *
- * <p>写入和控制请求在断连后可能已生效，不能通过此选项开启自动重试。</p>
+ * <p>下载、写入和控制请求均不自动重试，也不能通过此选项开启。</p>
  */
 public final class RequestOptions {
 
@@ -17,7 +17,7 @@ public final class RequestOptions {
      */
     public enum RetryPolicy {
         /**
-         * 使用 {@code OperationIntent} 对应的默认次数：查询和下载最多 2 次，写/控制 1 次。
+         * 使用 {@code OperationIntent} 对应的默认次数：查询最多 2 次，下载/写入/控制 1 次。
          */
         DEFAULT,
         /**

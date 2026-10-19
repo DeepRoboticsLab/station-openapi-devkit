@@ -211,7 +211,7 @@ This switch prevents accidental operations in the Sample only. Your own APIs sti
 
 - Objects, lists, and pages return `200 OK`.
 - SDK `void` results and an empty real-time position return `204 No Content`.
-- Downloads use `StreamingResponseBody`.
+- Downloads use `StreamingResponseBody` to forward bytes as they arrive, without temporary files or automatic retries. A failure after response commitment may leave partial output and cannot become a complete ProblemDetail response.
 - Validation and SDK errors return `application/problem+json`.
 - Pagination requests use `pageNo`, never `pageNum`.
 - Camera query responses never expose passwords through Swagger. Stream URLs containing user-info, query parameters, fragments, or invalid syntax become `null` to avoid exposing embedded credentials. Other stream URLs remain visible, and the SDK retains its original accessors.

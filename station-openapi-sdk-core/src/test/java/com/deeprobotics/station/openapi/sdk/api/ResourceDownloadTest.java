@@ -9,9 +9,6 @@ import com.deeprobotics.station.openapi.sdk.auth.AuthProvider;
 import com.deeprobotics.station.openapi.sdk.auth.AuthenticatedRequest;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiBusinessException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiClientException;
-import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException;
-import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiTransportException;
-import com.deeprobotics.station.openapi.sdk.http.HttpConnectionException;
 import com.deeprobotics.station.openapi.sdk.http.HttpRequest;
 import com.deeprobotics.station.openapi.sdk.http.HttpResponse;
 import com.deeprobotics.station.openapi.sdk.http.HttpTransport;
@@ -25,11 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +34,7 @@ import org.junit.jupiter.api.Test;
  * 资源流式下载 API 契约测试。
  *
  * <p>{@code /remoteApi/result/resource} 和普通 JSON 接口不同：成功响应是二进制流，失败响应可能是
- * JSON {@code R<?>}。这些测试锁定 SDK 对客户可见的下载语义：正常二进制不解包、JSON 失败转业务异常、
- * Path 下载用目标目录临时文件落盘，失败后不留下半截文件。</p>
+ * JSON {@code R<?>}。正常二进制直接写出，JSON 失败转业务异常。</p>
  */
 class ResourceDownloadTest {
 
@@ -89,139 +82,23 @@ class ResourceDownloadTest {
     }
 
     @Test
-    void pathDownloadWritesTargetAndCleansPartFileOnSuccess() throws IOException {
-        Path directory = Files.createTempDirectory("station-openapi-result-download-");
-        try {
-            RecordingTransport transport = new RecordingTransport()
-                    .enqueueDownloadBytes("path-file".getBytes(StandardCharsets.UTF_8));
-            ResultApi api = new DefaultResultApi(newExecutor(transport, new PassthroughAuthProvider()));
-            Path target = directory.resolve("patrol-result.jpg");
-
-            Path downloaded = api.downloadResource(ResourceDownloadRequest.builder()
-                    .filePath("result/TE-001/P001.jpg")
-                    .type(ResourceDownloadRequest.Type.RESULT_RESOURCE)
-                    .build(), target);
-
-            assertThat(downloaded).isEqualTo(target);
-            assertThat(Files.readString(target, StandardCharsets.UTF_8)).isEqualTo("path-file");
-            assertThat(partFiles(directory)).isEmpty();
-        } finally {
-            deleteDirectory(directory);
-        }
-    }
-
-    @Test
-    void pathDownloadDoesNotDeleteCustomerOwnedFileWithPartSuffix() throws IOException {
-        Path directory = Files.createTempDirectory("station-openapi-result-download-");
-        try {
-            RecordingTransport transport = new RecordingTransport()
-                    .enqueueDownloadBytes("new-download".getBytes(StandardCharsets.UTF_8));
-            ResultApi api = new DefaultResultApi(newExecutor(transport, new PassthroughAuthProvider()));
-            Path target = directory.resolve("patrol-result.jpg");
-            Path customerOwnedPartFile = directory.resolve("patrol-result.jpg.part");
-            Files.writeString(customerOwnedPartFile, "customer-owned-data", StandardCharsets.UTF_8);
-
-            api.downloadResource(ResourceDownloadRequest.builder()
-                    .filePath("result/TE-001/P001.jpg")
-                    .type(ResourceDownloadRequest.Type.RESULT_RESOURCE)
-                    .build(), target);
-
-            assertThat(Files.readString(target, StandardCharsets.UTF_8)).isEqualTo("new-download");
-            assertThat(customerOwnedPartFile).exists();
-            assertThat(Files.readString(customerOwnedPartFile, StandardCharsets.UTF_8))
-                    .isEqualTo("customer-owned-data");
-        } finally {
-            deleteDirectory(directory);
-        }
-    }
-
-    @Test
-    void failedPathDownloadRemovesPartFileAndDoesNotCreateTarget() throws IOException {
-        Path directory = Files.createTempDirectory("station-openapi-result-download-");
-        try {
-            RecordingTransport transport = new RecordingTransport()
-                    .enqueueDownloadResponse(200, Map.of("Content-Type", List.of("application/json")),
-                            failureBody(40004, "file not exists"));
-            ResultApi api = new DefaultResultApi(newExecutor(transport, new PassthroughAuthProvider()));
-            Path target = directory.resolve("missing.jpg");
-
-            assertThatThrownBy(() -> api.downloadResource(ResourceDownloadRequest.builder()
-                    .filePath("result/missing.jpg")
-                    .type(2)
-                    .build(), target))
-                    .isInstanceOf(StationOpenApiBusinessException.class)
-                    .hasMessageContaining("file not exists");
-
-            assertThat(Files.exists(target)).isFalse();
-            assertThat(partFiles(directory)).isEmpty();
-        } finally {
-            deleteDirectory(directory);
-        }
-    }
-
-    @Test
-    void generatedRequestIdIsKeptWhenPathPreparationFailsLocally() throws IOException {
-        Path directory = Files.createTempDirectory("station-openapi-result-download-");
-        try {
-            Path parentFile = directory.resolve("not-a-directory");
-            Files.writeString(parentFile, "occupied", StandardCharsets.UTF_8);
-            RecordingTransport transport = new RecordingTransport();
-            ResultApi api = new DefaultResultApi(newExecutor(transport, new PassthroughAuthProvider()));
-            ResourceDownloadRequest request = ResourceDownloadRequest.builder()
-                    .filePath("result/file.bin")
-                    .type(ResourceDownloadRequest.Type.RESULT_RESOURCE)
-                    .build();
-
-            assertThatThrownBy(() -> api.downloadResource(request, parentFile.resolve("target.bin")))
-                    .isInstanceOfSatisfying(StationOpenApiDownloadException.class, failure -> {
-                        assertThat(failure.requestId()).isNotBlank();
-                        assertThat(failure.path()).isEqualTo("/remoteApi/result/resource");
-                        assertThat(failure.operation()).isEqualTo("result.downloadResource");
-                        assertThat(failure.resultUnknown()).isFalse();
-                    });
-            assertThat(transport.downloadRequests()).isEmpty();
-        } finally {
-            deleteDirectory(directory);
-        }
-    }
-
-    @Test
-    void rootPathDownloadIsRejectedBeforeTransportCall() {
-        RecordingTransport transport = new RecordingTransport();
-        ResultApi api = new DefaultResultApi(newExecutor(transport, new PassthroughAuthProvider()));
-        ResourceDownloadRequest request = ResourceDownloadRequest.builder()
-                .filePath("result/file.bin")
-                .type(ResourceDownloadRequest.Type.RESULT_RESOURCE)
-                .build();
-        Path root = Path.of("").toAbsolutePath().getRoot();
-
-        assertThatThrownBy(() -> api.downloadResource(request, root))
-                .isInstanceOf(StationOpenApiClientException.class)
-                .hasMessageContaining("target must identify a file");
-        assertThat(transport.downloadRequests()).isEmpty();
-    }
-
-    @Test
-    void fileDownloadRetryReauthenticatesAndRebuildsSignedBody() {
+    void fileDownloadAuthenticatesBusinessBody() {
         RecordingTransport transport = new RecordingTransport()
-                .enqueueDownloadFailure(new HttpConnectionException("connection reset"))
-                .enqueueDownloadBytes("retry-file".getBytes(StandardCharsets.UTF_8));
+                .enqueueDownloadBytes("signed-file".getBytes(StandardCharsets.UTF_8));
         SequencedAuthProvider authProvider = new SequencedAuthProvider();
         ResultApi api = new DefaultResultApi(newExecutor(transport, authProvider));
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         api.downloadResource(ResourceDownloadRequest.builder()
-                .filePath("result/retry.jpg")
+                .filePath("result/signed.jpg")
                 .type(2)
                 .build(), output);
 
-        assertThat(output.toString(StandardCharsets.UTF_8)).isEqualTo("retry-file");
-        assertThat(transport.downloadRequests()).hasSize(2);
-        assertThat(authProvider.calls()).isEqualTo(2);
+        assertThat(output.toString(StandardCharsets.UTF_8)).isEqualTo("signed-file");
+        assertThat(transport.downloadRequests()).hasSize(1);
+        assertThat(authProvider.calls()).isEqualTo(1);
         Map<String, Object> firstBody = parseBody(transport.downloadRequests().get(0));
-        Map<String, Object> retryBody = parseBody(transport.downloadRequests().get(1));
         assertThat(firstBody).containsEntry("nonce", "nonce-1").containsEntry("sign", "sign-1");
-        assertThat(retryBody).containsEntry("nonce", "nonce-2").containsEntry("sign", "sign-2");
     }
 
     @Test
@@ -268,26 +145,6 @@ class ResourceDownloadTest {
         return body;
     }
 
-    private static List<Path> partFiles(Path directory) throws IOException {
-        try (var stream = Files.list(directory)) {
-            return stream
-                    .filter(path -> path.getFileName().toString().endsWith(".part"))
-                    .toList();
-        }
-    }
-
-    private static void deleteDirectory(Path directory) throws IOException {
-        if (directory == null || !Files.exists(directory)) {
-            return;
-        }
-        try (var stream = Files.walk(directory)) {
-            List<Path> paths = stream.sorted(Comparator.reverseOrder()).toList();
-            for (Path path : paths) {
-                Files.deleteIfExists(path);
-            }
-        }
-    }
-
     private static final class PassthroughAuthProvider implements AuthProvider {
         @Override
         public AuthenticatedRequest authenticate(Map<String, Object> businessBody) {
@@ -324,11 +181,6 @@ class ResourceDownloadTest {
             return this;
         }
 
-        private RecordingTransport enqueueDownloadFailure(RuntimeException failure) {
-            downloadOutcomes.add(failure);
-            return this;
-        }
-
         private RecordingTransport enqueueDownloadResponse(int statusCode, Map<String, List<String>> headers,
                 Object responseBody) {
             downloadOutcomes.add(new HttpResponse(statusCode, headers, JSON.writeBytes(responseBody)));
@@ -345,9 +197,6 @@ class ResourceDownloadTest {
         public HttpResponse download(HttpRequest request, OutputStream outputStream) {
             downloadRequests.add(request);
             Object outcome = downloadOutcomes.remove();
-            if (outcome instanceof RuntimeException failure) {
-                throw failure;
-            }
             if (outcome instanceof HttpResponse response) {
                 return response;
             }

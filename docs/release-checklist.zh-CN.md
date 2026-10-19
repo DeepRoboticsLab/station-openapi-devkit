@@ -31,7 +31,7 @@
 
 ## 可选能力
 
-- [ ] 文件下载使用 `Path` 或 `OutputStream`，没有读取完整 `byte[]`。
+- [ ] 文件下载使用 `OutputStream`，没有读取完整 `byte[]`；重新下载前会丢弃不完整输出。
 - [ ] 写入或控制操作出现 `resultUnknown=true` 时，会先确认状态再决定是否重试。
 - [ ] Sample 的 11 个危险操作默认保持锁定，或仅在确认目标后临时启用。
 - [ ] 需要 MQ 时，已向技术支持获取 NameServer 并确认 Topic 和消息权限。

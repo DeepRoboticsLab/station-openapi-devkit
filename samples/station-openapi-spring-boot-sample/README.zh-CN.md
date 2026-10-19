@@ -211,7 +211,7 @@ sample:
 
 - 对象、列表和分页正常返回 `200 OK`。
 - SDK `void` 和空的实时坐标返回 `204 No Content`。
-- 文件下载使用 `StreamingResponseBody` 流式输出。
+- 文件下载使用 `StreamingResponseBody` 随接收随转发，不使用临时文件或自动重试；响应提交后失败可能留下部分输出，无法再转换为完整 ProblemDetail 响应。
 - 校验和 SDK 异常返回 `application/problem+json`。
 - 分页请求使用 `pageNo`，不要使用 `pageNum`。
 - 摄像机查询结果不会向 Swagger 返回密码；含账号、查询参数、片段或无法解析的流地址会置为 `null`，避免 URL 内的凭据泄露。无这些内容的流地址正常展示，SDK 原始访问器保持可用。

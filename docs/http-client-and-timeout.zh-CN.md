@@ -47,7 +47,7 @@ RequestOptions options = RequestOptions.builder()
         .callTimeout(Duration.ofMinutes(3))
         .build();
 
-client.result().downloadResource(request, target, options);
+client.result().downloadResource(request, outputStream, options);
 ```
 
 未覆盖的配置继续使用 Client 默认值。`requestId` 用于关联日志和异常，不是业务幂等键。

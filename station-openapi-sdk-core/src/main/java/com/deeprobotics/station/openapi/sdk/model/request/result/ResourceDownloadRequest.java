@@ -17,7 +17,7 @@ public final class ResourceDownloadRequest implements OpenApiRequest {
      *
      * <p>地图文件通常来自地图列表中的地图文件名；巡检结果资源通常来自
      * {@code PatrolResultInfo.fileList().get(i).filePath()}。这里传的是平台返回的资源路径，
-     * 不是客户本机的绝对路径；本地保存路径由 {@code ResultApi.downloadResource(..., Path)} 的 target 决定。</p>
+     * 不是客户本机的绝对路径；调用方通过输出流决定数据去向。</p>
      */
     private final String filePath;
     /**

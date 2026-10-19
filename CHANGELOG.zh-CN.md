@@ -6,6 +6,21 @@
 
 当前版本是 GitHub 源码版本，尚未作为正式版本发布，也不提供 Maven Central 公共制品。
 
+### 破坏性变更：全程流式下载
+
+- 删除 `ResultApi.downloadResource(request, Path[, options])` 的两个重载，仅保留 `OutputStream` 重载；原调用方需要迁移并重新编译。
+- HTTP 数据通过 8 KiB 缓冲区直接写入调用方输出流。SDK 不再创建临时文件、完整缓存文件，也不再管理本地目录、替换和清理。
+- 下载始终只尝试一次，包括设置 `RequestOptions.RetryPolicy.DEFAULT` 时。连接、超时或输出失败可能留下部分数据，异常标记 `resultUnknown=true`；重新下载前应丢弃不完整输出。普通查询保留原有重试行为。
+- 输出流由调用方持有并关闭。保存文件时，将原 `Path` 调用改为：
+
+```java
+try (OutputStream output = Files.newOutputStream(target)) {
+    client.result().downloadResource(request, output, options);
+}
+```
+
+`Files.newOutputStream` 会立即创建或清空目标文件，且要求父目录已存在。文件权限、覆盖策略和不完整文件清理由调用方负责。Spring Boot 的 `StreamingResponseBody` 随数据到达直接转发；HTTP 响应提交后发生的失败无法再转换为完整 ProblemDetail 响应。详见[下载指南](docs/file-download-guide.zh-CN.md)。
+
 ### SDK
 
 - MQ 本体告警补充可空字符串 `alarmTime`，与平台实际发布时间一致，保留原四参构造器。
@@ -19,7 +34,7 @@
 - 提供七个 API 分组，共 28 个 Station OpenAPI HTTP 调用。
 - 支持 Access Token 和 AppKey/SecretKey 签名两种鉴权方式。
 - 提供统一分页、异常、请求 ID、超时和受控重试。
-- 支持通过 `Path` 或 `OutputStream` 流式下载文件。
+- 支持直接向调用方提供的 `OutputStream` 流式下载文件。
 - 提供可选的 RocketMQ Router、消息模型和原生 Subscriber。
 - RocketMQ 支持任务状态、巡检结果、本体告警和巡视路线四类消息。
 - 提供普通 OkHttp 依赖路径和依赖冲突备用包。

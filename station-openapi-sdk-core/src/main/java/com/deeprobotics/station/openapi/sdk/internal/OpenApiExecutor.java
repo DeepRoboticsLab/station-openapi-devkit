@@ -18,17 +18,15 @@ import com.deeprobotics.station.openapi.sdk.http.HttpRequest;
 import com.deeprobotics.station.openapi.sdk.http.HttpResponse;
 import com.deeprobotics.station.openapi.sdk.http.HttpTimeoutException;
 import com.deeprobotics.station.openapi.sdk.http.HttpTransport;
+import com.deeprobotics.station.openapi.sdk.http.OperationIntent;
 import com.deeprobotics.station.openapi.sdk.json.JsonCodec;
 import com.deeprobotics.station.openapi.sdk.json.TypeRef;
 import com.deeprobotics.station.openapi.sdk.model.MapUtils;
 import com.deeprobotics.station.openapi.sdk.model.OpenApiRequest;
 import com.deeprobotics.station.openapi.sdk.model.common.ApiResponse;
 import com.deeprobotics.station.openapi.sdk.retry.RetryPolicy;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,7 +53,6 @@ public final class OpenApiExecutor {
     private final JsonCodec jsonCodec;
     private final Duration defaultReadTimeout;
     private final Duration defaultCallTimeout;
-    private final DownloadTempFileStore downloadTempFileStore;
     private final String userAgent;
 
     /**
@@ -79,16 +76,6 @@ public final class OpenApiExecutor {
      */
     public OpenApiExecutor(StationOpenApiConfig config, AuthProvider authProvider, HttpTransport transport,
             JsonCodec jsonCodec) {
-        this(config, authProvider, transport, jsonCodec, new DefaultDownloadTempFileStore(null));
-    }
-
-    OpenApiExecutor(StationOpenApiConfig config, AuthProvider authProvider, HttpTransport transport,
-            JsonCodec jsonCodec, Path downloadTempDirectory) {
-        this(config, authProvider, transport, jsonCodec, new DefaultDownloadTempFileStore(downloadTempDirectory));
-    }
-
-    OpenApiExecutor(StationOpenApiConfig config, AuthProvider authProvider, HttpTransport transport,
-            JsonCodec jsonCodec, DownloadTempFileStore downloadTempFileStore) {
         StationOpenApiConfig requiredConfig = Objects.requireNonNull(config, "config is required");
         this.endpoint = requiredConfig.endpoint();
         this.defaultReadTimeout = requiredConfig.readTimeout();
@@ -96,8 +83,6 @@ public final class OpenApiExecutor {
         this.authProvider = Objects.requireNonNull(authProvider, "authProvider is required");
         this.transport = Objects.requireNonNull(transport, "transport is required");
         this.jsonCodec = Objects.requireNonNull(jsonCodec, "jsonCodec is required");
-        this.downloadTempFileStore = Objects.requireNonNull(downloadTempFileStore,
-                "downloadTempFileStore is required");
         this.userAgent = "station-openapi-java/" + sdkVersion();
     }
 
@@ -162,8 +147,7 @@ public final class OpenApiExecutor {
     /**
      * 执行文件下载请求。
      *
-     * <p>每次尝试先写入独立临时文件，完整下载并通过响应校验后才复制给调用方，
-     * 避免重试拼接出损坏文件或将 JSON 错误体写入目标流。</p>
+     * <p>直接写入调用方输出流，不暂存、不重试。失败时输出可能不完整，由调用方决定如何处理。</p>
      *
      * @param endpointDefinition 下载接口路径、操作名和安全意图元数据
      * @param request 下载业务请求模型
@@ -176,51 +160,25 @@ public final class OpenApiExecutor {
         Objects.requireNonNull(outputStream, "outputStream is required");
         RequestOptions effectiveOptions = prepareOptions(options);
         String requestId = effectiveOptions.requestId();
-        RetryPolicy retryPolicy = RetryPolicy.from(effectiveOptions.retryPolicy(), endpointDef.intent());
-
-        for (int attempt = 1; attempt <= retryPolicy.maxAttempts(); attempt++) {
-            Path attemptFile = createDownloadTempFile(endpointDef, requestId);
-            try {
-                HttpResponse response;
-                try (OutputStream attemptOutput = Files.newOutputStream(attemptFile)) {
-                    // 每次下载尝试重新鉴权，避免复用 nonce/sign。
-                    HttpRequest httpRequest = buildRequest(endpointDef, request, effectiveOptions, requestId);
-                    try {
-                        response = requireTransportResponse(
-                                transport.download(httpRequest, attemptOutput), endpointDef, requestId, "download");
-                    } catch (StationOpenApiDownloadException ex) {
-                        // 仅临时文件写入失败，尚未写入调用方流，因此 resultUnknown=false。
-                        throw new StationOpenApiDownloadException("Failed to write OpenAPI download response",
-                                endpointDef.path(), requestId, endpointDef.operation(), false, ex);
-                    } catch (HttpTimeoutException | HttpConnectionException | StationOpenApiException ex) {
-                        throw ex;
-                    } catch (RuntimeException ex) {
-                        throw unexpectedTransportException(endpointDef, requestId, ex);
-                    }
-                }
-                if (handleDownloadResponse(endpointDef, response, requestId)) {
-                    copyDownloadToCaller(attemptFile, outputStream, endpointDef, requestId);
-                }
-                return;
-            } catch (HttpTimeoutException ex) {
-                if (retryPolicy.shouldRetry(attempt, ex)) {
-                    continue;
-                }
-                throw timeoutException(endpointDef, requestId, ex);
-            } catch (HttpConnectionException ex) {
-                if (retryPolicy.shouldRetry(attempt, ex)) {
-                    continue;
-                }
-                throw transportException(endpointDef, requestId, ex);
-            } catch (IOException ex) {
-                // 临时文件 I/O 失败，调用方流尚未写入，结果并非未知。
-                throw new StationOpenApiDownloadException("Failed to write OpenAPI download response",
-                        endpointDef.path(), requestId, endpointDef.operation(), false, ex);
-            } finally {
-                deleteDownloadTempFile(attemptFile, endpointDef, requestId);
-            }
+        HttpRequest httpRequest = buildRequest(endpointDef, request, effectiveOptions, requestId);
+        HttpResponse response;
+        try {
+            response = requireTransportResponse(
+                    transport.download(httpRequest, outputStream), endpointDef, requestId, "download");
+        } catch (StationOpenApiDownloadException ex) {
+            throw new StationOpenApiDownloadException(
+                    failureMessage("Failed to write OpenAPI download response", endpointDef),
+                    endpointDef.path(), requestId, endpointDef.operation(), ex.resultUnknown(), ex);
+        } catch (HttpTimeoutException ex) {
+            throw timeoutException(endpointDef, requestId, ex);
+        } catch (HttpConnectionException ex) {
+            throw transportException(endpointDef, requestId, ex);
+        } catch (StationOpenApiException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw unexpectedTransportException(endpointDef, requestId, ex);
         }
-        throw new IllegalStateException("unreachable retry state");
+        handleDownloadResponse(endpointDef, response, requestId);
     }
 
     /**
@@ -291,28 +249,11 @@ public final class OpenApiExecutor {
         return apiResponse.unwrapOrThrow(endpointDefinition.path(), requestId, endpointDefinition.operation());
     }
 
-    private Path createDownloadTempFile(EndpointDefinition endpointDefinition, String requestId) {
-        try {
-            return downloadTempFileStore.create();
-        } catch (IOException ex) {
-            throw new StationOpenApiDownloadException("Failed to create OpenAPI download temp file",
-                    endpointDefinition.path(), requestId, endpointDefinition.operation(), false, ex);
-        }
-    }
-
-    private void deleteDownloadTempFile(Path attemptFile, EndpointDefinition endpointDefinition, String requestId) {
-        try {
-            downloadTempFileStore.delete(attemptFile);
-        } catch (IOException | RuntimeException ex) {
-            // 清理失败不改变下载结果，也不阻断重试。
-        }
-    }
-
     /**
-     * 校验下载响应。二进制内容已写入临时文件；JSON 失败响应转为业务异常，
+     * 校验传输层返回的状态和元数据。JSON 失败响应转为业务异常，
      * JSON 成功响应仍属下载协议错误，即使 HTTP 状态为 2xx。
      */
-    private boolean handleDownloadResponse(EndpointDefinition endpointDefinition, HttpResponse response,
+    private void handleDownloadResponse(EndpointDefinition endpointDefinition, HttpResponse response,
             String requestId) {
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
@@ -345,18 +286,6 @@ public final class OpenApiExecutor {
             throw new StationOpenApiDownloadException(
                     "OpenAPI download returned unexpected Content-Type: " + contentTypeDescription(response),
                     endpointDefinition.path(), requestId, endpointDefinition.operation(), false);
-        }
-        return true;
-    }
-
-    private static void copyDownloadToCaller(Path attemptFile, OutputStream outputStream,
-            EndpointDefinition endpointDefinition, String requestId) {
-        try {
-            Files.copy(attemptFile, outputStream);
-        } catch (IOException | RuntimeException ex) {
-            // 调用方流可能已收到部分字节，以 resultUnknown=true 提醒复核目标文件。
-            throw new StationOpenApiDownloadException("Failed to copy OpenAPI download response to caller output",
-                    endpointDefinition.path(), requestId, endpointDefinition.operation(), true, ex);
         }
     }
 
@@ -447,6 +376,9 @@ public final class OpenApiExecutor {
     }
 
     private static String failureMessage(String baseMessage, EndpointDefinition endpointDefinition) {
+        if (endpointDefinition.intent() == OperationIntent.FILE_DOWNLOAD) {
+            return baseMessage + ". Output may be partial; discard incomplete output before downloading again";
+        }
         if (!endpointDefinition.intent().resultUnknownOnConnectionLoss()) {
             return baseMessage;
         }
@@ -476,37 +408,5 @@ public final class OpenApiExecutor {
             return "1.0.0-SNAPSHOT";
         }
         return implementationVersion;
-    }
-
-    /**
-     * 下载临时文件抽象，主要用于测试注入失败场景。
-     */
-    interface DownloadTempFileStore {
-
-        Path create() throws IOException;
-
-        void delete(Path path) throws IOException;
-    }
-
-    private static final class DefaultDownloadTempFileStore implements DownloadTempFileStore {
-        private final Path directory;
-
-        private DefaultDownloadTempFileStore(Path directory) {
-            this.directory = directory;
-        }
-
-        @Override
-        public Path create() throws IOException {
-            if (directory == null) {
-                // 每次尝试使用系统临时文件；Path API 另用目标目录内的 .part 文件完成最终替换。
-                return Files.createTempFile("station-openapi-download-", ".tmp");
-            }
-            return Files.createTempFile(directory, "station-openapi-download-", ".tmp");
-        }
-
-        @Override
-        public void delete(Path path) throws IOException {
-            Files.deleteIfExists(path);
-        }
     }
 }

@@ -4,12 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.deeprobotics.station.openapi.sdk.RequestOptions;
+import com.deeprobotics.station.openapi.sdk.StationOpenApiClient;
+import com.deeprobotics.station.openapi.sdk.StationOpenApiClients;
 import com.deeprobotics.station.openapi.sdk.StationOpenApiConfig;
 import com.deeprobotics.station.openapi.sdk.auth.AuthProvider;
 import com.deeprobotics.station.openapi.sdk.auth.AuthenticatedRequest;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiBusinessException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiHttpException;
+import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiTransportException;
 import com.deeprobotics.station.openapi.sdk.http.EndpointDefinition;
 import com.deeprobotics.station.openapi.sdk.http.HttpRequest;
 import com.deeprobotics.station.openapi.sdk.http.HttpResponse;
@@ -17,6 +20,7 @@ import com.deeprobotics.station.openapi.sdk.http.OperationIntent;
 import com.deeprobotics.station.openapi.sdk.internal.OpenApiExecutor;
 import com.deeprobotics.station.openapi.sdk.model.MapUtils;
 import com.deeprobotics.station.openapi.sdk.model.OpenApiRequest;
+import com.deeprobotics.station.openapi.sdk.model.request.result.ResourceDownloadRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,20 +68,43 @@ class OkHttpDownloadTest {
                 .setBody(new String(fileBytes, StandardCharsets.US_ASCII)));
         StreamingGuardOutputStream output = new StreamingGuardOutputStream(fileBytes.length);
 
-        try (OkHttpTransport transport = OkHttpTransportFactory.create()) {
-            HttpResponse response = transport.download(new HttpRequest(
-                    server.url("/remoteApi/result/resource").uri(),
-                    Map.of("Content-Type", "application/json; charset=utf-8"),
-                    "{\"filePath\":\"map.bin\",\"type\":1}".getBytes(StandardCharsets.UTF_8),
-                    Duration.ofSeconds(5),
-                    Duration.ofSeconds(10)), output);
+        try (StationOpenApiClient client = newClient(server)) {
+            client.result().downloadResource(downloadRequest(), output);
 
-            assertThat(response.statusCode()).isEqualTo(200);
-            assertThat(response.body()).isEmpty();
             assertThat(output.toByteArray()).isEqualTo(fileBytes);
-            assertThat(output.maxWriteLength()).isLessThan(fileBytes.length);
+            assertThat(output.maxWriteLength()).isLessThanOrEqualTo(8192);
             assertThat(output.writeCalls()).isGreaterThan(1);
         }
+        assertThat(output.closed).isFalse();
+    }
+
+    @Test
+    void interruptedDownloadExposesPartialOutputAndDoesNotRetry() throws Exception {
+        byte[] fileBytes = asciiBytes(128 * 1024);
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream")
+                .setBody(new String(fileBytes, StandardCharsets.US_ASCII))
+                .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY));
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream")
+                .setBody("retried-download"));
+        StreamingGuardOutputStream output = new StreamingGuardOutputStream(fileBytes.length);
+
+        try (StationOpenApiClient client = newClient(server)) {
+            assertThatThrownBy(() -> client.result().downloadResource(downloadRequest(), output,
+                    RequestOptions.builder().requestId("interrupted-download").build()))
+                    .isInstanceOf(StationOpenApiTransportException.class)
+                    .hasMessageContaining("interrupted-download")
+                    .hasMessageContaining("/remoteApi/result/resource")
+                    .hasMessageContaining("result.downloadResource")
+                    .satisfies(thrown -> assertThat(((StationOpenApiTransportException) thrown).resultUnknown())
+                            .isTrue());
+        }
+        assertThat(server.getRequestCount()).isEqualTo(1);
+        assertThat(output.toByteArray().length).isBetween(1, fileBytes.length - 1);
+        assertThat(output.toByteArray()).isEqualTo(slice(fileBytes, output.toByteArray().length));
+        assertThat(output.closed).isFalse();
     }
 
     @Test
@@ -148,7 +176,7 @@ class OkHttpDownloadTest {
 
     @Test
     void non2xxDownloadResponseThrowsHttpExceptionAndDoesNotWriteCallerOutput() throws Exception {
-        // 非 2xx 响应必须保留 HTTP status 和错误片段，并且不能污染调用方输出流。
+        // 非 2xx 响应保留状态码，不泄露原始错误体，也不写入调用方输出流。
         MockWebServer server = newServer();
         server.enqueue(new MockResponse()
                 .setResponseCode(503)
@@ -171,8 +199,7 @@ class OkHttpDownloadTest {
     }
 
     @Test
-    void directDownloadMarksCallerOutputWriteFailureAsResultUnknown() throws Exception {
-        // 直连 transport.download 时 outputStream 就是客户流；写出部分字节后失败，文件完整性无法判断。
+    void downloadMarksCallerOutputWriteFailureAsResultUnknown() throws Exception {
         byte[] fileBytes = asciiBytes(32 * 1024);
         MockWebServer server = newServer();
         server.enqueue(new MockResponse()
@@ -181,24 +208,22 @@ class OkHttpDownloadTest {
                 .setBody(new String(fileBytes, StandardCharsets.US_ASCII)));
         FailingAfterPartialWriteOutputStream output = new FailingAfterPartialWriteOutputStream(100);
 
-        try (OkHttpTransport transport = OkHttpTransportFactory.create()) {
-            assertThatThrownBy(() -> transport.download(new HttpRequest(
-                    server.url("/remoteApi/result/resource").uri(),
-                    Map.of("Content-Type", "application/json; charset=utf-8", "X-Request-Id", "direct-download"),
-                    "{\"filePath\":\"map.bin\",\"type\":1}".getBytes(StandardCharsets.UTF_8),
-                    Duration.ofSeconds(5),
-                    Duration.ofSeconds(10)), output))
+        try (StationOpenApiClient client = newClient(server)) {
+            assertThatThrownBy(() -> client.result().downloadResource(downloadRequest(), output,
+                    RequestOptions.builder().requestId("output-failure").build()))
                     .isInstanceOf(StationOpenApiDownloadException.class)
                     .satisfies(thrown -> assertThat(((StationOpenApiDownloadException) thrown).resultUnknown())
                             .isTrue())
-                    .hasMessageContaining("direct-download")
+                    .hasMessageContaining("output-failure")
+                    .hasMessageContaining("result.downloadResource")
                     .hasMessageContaining("/remoteApi/result/resource");
         }
         assertThat(output.bytesWritten()).isPositive();
+        assertThat(server.getRequestCount()).isEqualTo(1);
     }
 
     @Test
-    void directDownloadWrapsUncheckedCallerOutputFailureAndRedactsCause() throws Exception {
+    void downloadWrapsUncheckedCallerOutputFailureAndRedactsCause() throws Exception {
         MockWebServer server = newServer();
         server.enqueue(new MockResponse()
                 .setResponseCode(200)
@@ -206,20 +231,18 @@ class OkHttpDownloadTest {
                 .setBody("complete-download"));
         RuntimeFailingOutputStream output = new RuntimeFailingOutputStream();
 
-        try (OkHttpTransport transport = OkHttpTransportFactory.create()) {
-            assertThatThrownBy(() -> transport.download(new HttpRequest(
-                    server.url("/remoteApi/result/resource").uri(),
-                    Map.of("X-Request-Id", "direct-runtime-output"),
-                    "{}".getBytes(StandardCharsets.UTF_8),
-                    Duration.ofSeconds(5),
-                    Duration.ofSeconds(10)), output))
+        try (StationOpenApiClient client = newClient(server)) {
+            assertThatThrownBy(() -> client.result().downloadResource(downloadRequest(), output,
+                    RequestOptions.builder().requestId("runtime-output-failure").build()))
                     .isInstanceOf(StationOpenApiDownloadException.class)
-                    .hasMessageContaining("direct-runtime-output")
+                    .hasMessageContaining("runtime-output-failure")
+                    .hasMessageContaining("result.downloadResource")
                     .hasMessageNotContaining("raw-output-password")
                     .satisfies(thrown -> assertThat(((StationOpenApiDownloadException) thrown).resultUnknown())
                             .isTrue());
         }
         assertThat(output.writeAttempted()).isTrue();
+        assertThat(server.getRequestCount()).isEqualTo(1);
     }
 
     @Test
@@ -248,6 +271,17 @@ class OkHttpDownloadTest {
         }
     }
 
+    private StationOpenApiClient newClient(MockWebServer server) {
+        return StationOpenApiClients.builder()
+                .endpoint(server.url("/web").toString())
+                .accessToken("download-test-token")
+                .build();
+    }
+
+    private static ResourceDownloadRequest downloadRequest() {
+        return ResourceDownloadRequest.builder().filePath("map.bin").type(1).build();
+    }
+
     private OpenApiExecutor newExecutor(MockWebServer server, OkHttpTransport transport) {
         // 使用透传鉴权 provider，让测试聚焦下载响应处理，而不是重复覆盖签名/token 逻辑。
         StationOpenApiConfig config = StationOpenApiConfig.builder()
@@ -258,7 +292,6 @@ class OkHttpDownloadTest {
     }
 
     private static EndpointDefinition downloadEndpoint() {
-        // FILE_DOWNLOAD intent 会启用下载重试和 resultUnknown 语义，是本组测试的核心上下文。
         return EndpointDefinition.of("result.downloadResource", "/remoteApi/result/resource",
                 OperationIntent.FILE_DOWNLOAD);
     }
@@ -316,6 +349,7 @@ class OkHttpDownloadTest {
         private final ByteArrayOutputStream delegate = new ByteArrayOutputStream();
         private int writeCalls;
         private int maxWriteLength;
+        private boolean closed;
 
         private StreamingGuardOutputStream(int fullLength) {
             this.fullLength = fullLength;
@@ -341,6 +375,11 @@ class OkHttpDownloadTest {
 
         private byte[] toByteArray() {
             return delegate.toByteArray();
+        }
+
+        @Override
+        public void close() {
+            closed = true;
         }
 
         private int writeCalls() {

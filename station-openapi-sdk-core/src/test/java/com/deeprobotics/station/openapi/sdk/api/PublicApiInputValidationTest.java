@@ -12,7 +12,6 @@ import com.deeprobotics.station.openapi.sdk.http.HttpTransport;
 import com.deeprobotics.station.openapi.sdk.model.request.result.ResourceDownloadRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -20,7 +19,7 @@ import org.junit.jupiter.api.Test;
 /**
  * 客户业务 API 的公共 null 边界测试。
  *
- * <p>所有业务请求、下载目标和输出流都必须在进入 transport 前转换为统一 SDK 客户异常，
+ * <p>所有业务请求和输出流的参数错误都必须在进入 transport 前转换为统一 SDK 客户异常，
  * 避免客户为同一种本地输入错误额外捕获 JDK NPE。</p>
  */
 class PublicApiInputValidationTest {
@@ -72,11 +71,7 @@ class PublicApiInputValidationTest {
                     new InvalidCall("result.downloadResource.request.outputStream",
                             () -> client.result().downloadResource(null, new ByteArrayOutputStream(), null)),
                     new InvalidCall("result.downloadResource.outputStream",
-                            () -> client.result().downloadResource(downloadRequest, (OutputStream) null, null)),
-                    new InvalidCall("result.downloadResource.request.path",
-                            () -> client.result().downloadResource(null, Path.of("result.bin"), null)),
-                    new InvalidCall("result.downloadResource.path",
-                            () -> client.result().downloadResource(downloadRequest, (Path) null, null)));
+                            () -> client.result().downloadResource(downloadRequest, null, null)));
 
             for (InvalidCall invalidCall : invalidCalls) {
                 assertThatThrownBy(invalidCall.action()::run)

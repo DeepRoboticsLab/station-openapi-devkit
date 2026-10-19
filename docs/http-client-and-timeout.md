@@ -47,7 +47,7 @@ RequestOptions options = RequestOptions.builder()
         .callTimeout(Duration.ofMinutes(3))
         .build();
 
-client.result().downloadResource(request, target, options);
+client.result().downloadResource(request, outputStream, options);
 ```
 
 Properties not overridden continue to use the Client defaults. `requestId` correlates logs and exceptions; it is not a business idempotency key.

@@ -12,9 +12,9 @@ public enum OperationIntent {
      */
     READ_ONLY(2, false),
     /**
-     * 文件下载。默认最多尝试 2 次，但每次尝试必须隔离写入，避免失败的部分字节污染调用方输出。
+     * 文件下载。只尝试一次；连接中断或超时可能留下不完整输出。
      */
-    FILE_DOWNLOAD(2, false),
+    FILE_DOWNLOAD(1, true),
     /**
      * 业务写入，例如创建/删除任务模板。默认不重试。
      */
@@ -29,13 +29,13 @@ public enum OperationIntent {
     DEVICE_CONTROL(1, true);
 
     /**
-     * 默认最大尝试次数。查询和下载为 2，写入和控制为 1。
+     * 默认最大尝试次数。查询为 2，下载、写入和控制为 1。
      */
     private final int defaultMaxAttempts;
     /**
      * 连接丢失或超时时是否需要告诉客户“结果未知”。
      *
-     * <p>危险操作可能已经被平台或设备接收，因此不能简单当作失败。</p>
+     * <p>写入和控制可能已经生效；下载可能已向调用方交付部分字节。</p>
      */
     private final boolean resultUnknownOnConnectionLoss;
 
@@ -47,7 +47,7 @@ public enum OperationIntent {
     /**
      * 返回包含首次调用在内的默认最大尝试次数。
      *
-     * @return 查询/下载为 2，写入/控制为 1
+     * @return 查询为 2，下载/写入/控制为 1
      */
     public int defaultMaxAttempts() {
         return defaultMaxAttempts;
@@ -56,7 +56,7 @@ public enum OperationIntent {
     /**
      * 返回连接中断或超时后是否应把客户异常标记为结果未知。
      *
-     * @return 危险操作返回 {@code true}，只读/下载返回 {@code false}
+     * @return 下载、写入和控制返回 {@code true}，查询返回 {@code false}
      */
     public boolean resultUnknownOnConnectionLoss() {
         return resultUnknownOnConnectionLoss;

@@ -28,10 +28,12 @@ public interface HttpTransport extends AutoCloseable {
     /**
      * 执行文件下载。
      *
-     * <p>二进制成功响应应流式写入 {@code outputStream}，同时返回 status/header 和有界错误 body。
+     * <p>二进制成功响应应直接分块写入 {@code outputStream}，不暂存、不重试、不完整缓存文件。
      * 如果远端返回非 2xx，或 2xx 响应不是 {@code application/octet-stream}，transport 需要让 executor
      * 能从 {@link HttpResponse#body()} 读取有限诊断片段；不要把 JSON、HTML 或未知类型写进客户文件。
-     * 异常分类与 {@link #postJson(HttpRequest)} 相同。</p>
+     * 网络异常分类与 {@link #postJson(HttpRequest)} 相同；输出流写入失败应抛出
+     * {@link com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException
+     * StationOpenApiDownloadException}，并设置 {@code resultUnknown=true}。</p>
      *
      * @param request executor 已经完成鉴权和 JSON 序列化的下载请求快照
      * @param outputStream 二进制成功响应的写入目标；transport 不负责关闭

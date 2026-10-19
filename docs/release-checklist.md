@@ -31,7 +31,7 @@ Use this checklist after configuring the SDK or Sample to confirm the basic inte
 
 ## Optional Capabilities
 
-- [ ] File downloads use `Path` or `OutputStream` and never load the complete file into a `byte[]`.
+- [ ] File downloads use `OutputStream`, never load the complete file into a `byte[]`, and discard incomplete output before restarting.
 - [ ] A write or control failure with `resultUnknown=true` is confirmed before any repeat attempt.
 - [ ] The Sample's eleven dangerous operations remain locked by default or are enabled only after confirming the target.
 - [ ] When MQ is required, technical support has supplied the NameServer and confirmed the topic and message permissions.
