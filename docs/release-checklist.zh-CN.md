@@ -7,10 +7,9 @@
 ## SDK 和项目
 
 - [ ] 项目使用 JDK 17 或更高版本。
-- [ ] Spring Boot 使用 3.x。
-- [ ] 已选择复制 SDK 源码，或从自己的私有 Nexus 引入完整 SDK 模块。
+- [ ] 使用 Sample 配置的应用运行于 Spring Boot 3.x。
+- [ ] 已复制 SDK 源码，或能从本地、私有 Maven 仓库解析 SDK 依赖。
 - [ ] 源码接入时已复制 OkHttp transport 的 `META-INF/services` SPI 文件。
-- [ ] 使用的源码或私有制品版本为 `1.0.0-SNAPSHOT`。
 
 ## Endpoint 和凭证
 
@@ -18,11 +17,11 @@
 - [ ] Endpoint 没有追加具体 `/remoteApi/*` 路径。
 - [ ] 已向技术支持获取 Access Token，或 AppKey 和 SecretKey。
 - [ ] Token 和签名只启用一种。
-- [ ] 真实凭证没有提交到公开仓库或写入日志。
+- [ ] 真实凭证没有提交到版本库或写入日志。
 
 ## 第一次调用
 
-- [ ] Spring 中只创建一个 `StationOpenApiClient` Bean。
+- [ ] 相同平台和凭证的调用复用一个 Client；Spring 应用使用单例 Bean。
 - [ ] Client 在应用关闭时调用 `close()`。
 - [ ] `client.system().getTimeText()` 调用成功。
 - [ ] 至少一个 Inventory 查询调用成功。
@@ -33,6 +32,6 @@
 
 - [ ] 文件下载使用 `OutputStream`，没有读取完整 `byte[]`；重新下载前会丢弃不完整输出。
 - [ ] 写入或控制操作出现 `resultUnknown=true` 时，会先确认状态再决定是否重试。
-- [ ] Sample 的 11 个危险操作默认保持锁定，或仅在确认目标后临时启用。
+- [ ] Sample 的 11 个写入/控制操作默认关闭，仅在显式设置 `sample.dangerous-operations-enabled=true` 时启用。
 - [ ] 需要 MQ 时，已向技术支持获取 NameServer 并确认 Topic 和消息权限。
 - [ ] MQ Handler 能处理重复消息，并且不记录原始消息体。

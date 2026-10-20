@@ -4,7 +4,7 @@
 
 Station OpenAPI Java SDK 面向使用 JDK 17 和 Spring Boot 3 的应用，提供 28 个 HTTP 接口、两种鉴权方式、统一分页与异常处理、流式文件下载，以及可选的 RocketMQ 消息接入。
 
-当前源码版本为 `1.0.0-SNAPSHOT`。项目通过公司 GitHub 公开仓库提供源码，不在 Maven Central 发布官方 Jar 或公共 Maven 坐标。
+当前源码版本为 `1.1.0`。项目通过公司 GitHub 公开仓库提供源码，不在 Maven Central 发布官方 Jar 或公共 Maven 坐标。
 
 ## 接入前准备
 

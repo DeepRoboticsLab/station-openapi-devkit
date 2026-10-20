@@ -12,6 +12,7 @@ import com.deeprobotics.station.openapi.sdk.auth.AuthenticatedRequest;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiBusinessException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiHttpException;
+import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiTimeoutException;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiTransportException;
 import com.deeprobotics.station.openapi.sdk.http.EndpointDefinition;
 import com.deeprobotics.station.openapi.sdk.http.HttpRequest;
@@ -29,11 +30,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * OkHttp 下载链路测试。
@@ -76,6 +80,123 @@ class OkHttpDownloadTest {
             assertThat(output.writeCalls()).isGreaterThan(1);
         }
         assertThat(output.closed).isFalse();
+    }
+
+    @Test
+    void progressingDownloadOutlastsGlobalCallAndReadTimeouts() throws Exception {
+        byte[] fileBytes = asciiBytes(12 * 1024);
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream")
+                .setBody(new String(fileBytes, StandardCharsets.US_ASCII))
+                .throttleBody(1024, 150, TimeUnit.MILLISECONDS));
+        StreamingGuardOutputStream output = new StreamingGuardOutputStream(fileBytes.length);
+
+        try (StationOpenApiClient client = StationOpenApiClients.builder()
+                .endpoint(server.url("/").toString())
+                .accessToken("download-test-token")
+                .readTimeout(Duration.ofSeconds(1))
+                .callTimeout(Duration.ofMillis(300))
+                .build()) {
+            client.result().downloadResource(downloadRequest(), output);
+        }
+
+        assertThat(output.toByteArray()).isEqualTo(fileBytes);
+        assertThat(output.maxWriteLength()).isLessThanOrEqualTo(8192);
+        assertThat(output.closed).isFalse();
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
+    @Timeout(30)
+    void defaultDownloadCanStreamForLongerThanFifteenSeconds() throws Exception {
+        byte[] fileBytes = asciiBytes(18 * 1024);
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream")
+                .setBody(new String(fileBytes, StandardCharsets.US_ASCII))
+                .throttleBody(1024, 1, TimeUnit.SECONDS));
+        StreamingGuardOutputStream output = new StreamingGuardOutputStream(fileBytes.length);
+
+        long started = System.nanoTime();
+        try (StationOpenApiClient client = StationOpenApiClients.builder()
+                .endpoint(server.url("/").toString())
+                .accessToken("download-test-token")
+                .build()) {
+            client.result().downloadResource(downloadRequest(), output);
+        }
+
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isGreaterThan(Duration.ofSeconds(15));
+        assertThat(output.toByteArray()).isEqualTo(fileBytes);
+        assertThat(output.closed).isFalse();
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
+    void explicitDownloadCallTimeoutStopsProgressingTransferWithoutRetry() throws Exception {
+        byte[] fileBytes = asciiBytes(20 * 1024);
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream")
+                .setBody(new String(fileBytes, StandardCharsets.US_ASCII))
+                .throttleBody(1024, 150, TimeUnit.MILLISECONDS));
+        StreamingGuardOutputStream output = new StreamingGuardOutputStream(fileBytes.length);
+
+        try (StationOpenApiClient client = newClient(server)) {
+            assertThatThrownBy(() -> client.result().downloadResource(downloadRequest(), output,
+                    RequestOptions.builder().readTimeout(Duration.ofSeconds(2))
+                            .callTimeout(Duration.ofMillis(500)).build()))
+                    .isInstanceOf(StationOpenApiTimeoutException.class)
+                    .satisfies(thrown -> assertThat(((StationOpenApiTimeoutException) thrown).resultUnknown())
+                            .isTrue());
+        }
+
+        assertThat(output.toByteArray().length).isBetween(1, fileBytes.length - 1);
+        assertThat(output.closed).isFalse();
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
+    void downloadWithoutTotalTimeoutStillFailsOnReadStallWithoutRetry() throws Exception {
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream")
+                .setBody("delayed-file")
+                .setBodyDelay(1, TimeUnit.SECONDS));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        try (StationOpenApiClient client = newClient(server)) {
+            assertThatThrownBy(() -> client.result().downloadResource(downloadRequest(), output,
+                    RequestOptions.builder().readTimeout(Duration.ofMillis(100)).build()))
+                    .isInstanceOf(StationOpenApiTimeoutException.class)
+                    .satisfies(thrown -> assertThat(((StationOpenApiTimeoutException) thrown).resultUnknown())
+                            .isTrue());
+        }
+
+        assertThat(output.size()).isZero();
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
+    void directDownloadDefaultsToTenSecondReadsAndNoTotalTimeout() {
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse()
+                .setHeader("Content-Type", "application/octet-stream").setBody("file"));
+        OkHttpClient httpClient = new OkHttpClient.Builder().addInterceptor(chain -> {
+            assertThat(chain.readTimeoutMillis()).isEqualTo(10_000);
+            assertThat(chain.call().timeout().timeoutNanos()).isZero();
+            return chain.proceed(chain.request());
+        }).build();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        try (OkHttpTransport transport = OkHttpTransportFactory.create(httpClient)) {
+            transport.download(new HttpRequest(server.url("/remoteApi/result/resource").uri(),
+                    Map.of(), "{}".getBytes(StandardCharsets.UTF_8), null, null), output);
+            assertThat(output.toString(StandardCharsets.UTF_8)).isEqualTo("file");
+        } finally {
+            httpClient.dispatcher().executorService().shutdownNow();
+            httpClient.connectionPool().evictAll();
+        }
     }
 
     @Test

@@ -60,6 +60,9 @@ public interface ResultApi {
     /**
      * 流式下载资源，并指定本次调用的请求 ID 和超时。
      *
+     * <p>默认不限制总时长，连接和读取等待超时仍生效。仅显式设置 {@link RequestOptions#callTimeout()}
+     * 时，才对本次下载施加总时限。</p>
+     *
      * <p>无论 {@code options.retryPolicy} 为何值，下载都只尝试一次。连接、超时或输出失败时，
      * 异常的 {@code resultUnknown=true} 表示输出可能不完整，不能继续向同一输出追加重试结果。</p>
      *

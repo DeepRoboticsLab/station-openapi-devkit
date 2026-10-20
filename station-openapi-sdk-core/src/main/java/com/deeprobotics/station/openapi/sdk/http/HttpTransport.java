@@ -35,6 +35,8 @@ public interface HttpTransport extends AutoCloseable {
      * {@link com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException
      * StationOpenApiDownloadException}，并设置 {@code resultUnknown=true}。</p>
      *
+     * <p>{@link HttpRequest#callTimeout()} 为零时不得设置总时限；读取等待超时仍须生效。</p>
+     *
      * @param request executor 已经完成鉴权和 JSON 序列化的下载请求快照
      * @param outputStream 二进制成功响应的写入目标；transport 不负责关闭
      * @return HTTP status、header，以及非二进制响应的有限诊断 body；实现不得返回 {@code null}

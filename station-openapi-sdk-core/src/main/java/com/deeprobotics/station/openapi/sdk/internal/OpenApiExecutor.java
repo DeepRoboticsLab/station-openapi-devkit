@@ -152,7 +152,7 @@ public final class OpenApiExecutor {
      * @param endpointDefinition 下载接口路径、操作名和安全意图元数据
      * @param request 下载业务请求模型
      * @param outputStream 调用方提供的最终输出流，执行器不负责关闭
-     * @param options 请求级覆盖选项；传 {@code null} 时使用客户端默认值
+     * @param options 请求级覆盖选项；默认继承读取超时，下载不设总时限
      */
     public void download(EndpointDefinition endpointDefinition, OpenApiRequest request, OutputStream outputStream,
             RequestOptions options) {
@@ -200,7 +200,8 @@ public final class OpenApiExecutor {
         }
 
         URI url = EndpointResolver.resolve(endpoint, endpointDefinition.path());
-        return new HttpRequest(url, headers, body, effectiveReadTimeout(options), effectiveCallTimeout(options));
+        return new HttpRequest(url, headers, body, effectiveReadTimeout(options),
+                effectiveCallTimeout(options, endpointDefinition.intent()));
     }
 
     private HttpResponse postJson(HttpRequest request, EndpointDefinition endpointDefinition, String requestId) {
@@ -348,8 +349,12 @@ public final class OpenApiExecutor {
         return options.readTimeout() == null ? defaultReadTimeout : options.readTimeout();
     }
 
-    private Duration effectiveCallTimeout(RequestOptions options) {
-        return options.callTimeout() == null ? defaultCallTimeout : options.callTimeout();
+    private Duration effectiveCallTimeout(RequestOptions options, OperationIntent intent) {
+        if (options.callTimeout() != null) {
+            return options.callTimeout();
+        }
+        // 下载耗时随文件大小变化，默认只限制建连和阻塞读取的等待时间。
+        return intent == OperationIntent.FILE_DOWNLOAD ? Duration.ZERO : defaultCallTimeout;
     }
 
     private StationOpenApiTimeoutException timeoutException(EndpointDefinition endpointDefinition, String requestId,
@@ -405,7 +410,7 @@ public final class OpenApiExecutor {
     private static String sdkVersion() {
         String implementationVersion = OpenApiExecutor.class.getPackage().getImplementationVersion();
         if (implementationVersion == null || implementationVersion.isBlank()) {
-            return "1.0.0-SNAPSHOT";
+            return "1.1.0";
         }
         return implementationVersion;
     }

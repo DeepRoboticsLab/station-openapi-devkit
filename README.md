@@ -4,7 +4,7 @@
 
 Station OpenAPI Java SDK is intended for applications built with JDK 17 and Spring Boot 3. It provides 28 HTTP operations, two authentication modes, unified pagination and exception handling, streaming file downloads, and optional RocketMQ message integration.
 
-The current source version is `1.0.0-SNAPSHOT`. The project is distributed as source code through the company's public GitHub repository. No official JARs or public Maven coordinates are published to Maven Central.
+The current source version is `1.1.0`. The project is distributed as source code through the company's public GitHub repository. No official JARs or public Maven coordinates are published to Maven Central.
 
 ## Prerequisites
 

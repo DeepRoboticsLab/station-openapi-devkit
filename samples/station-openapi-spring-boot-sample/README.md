@@ -39,7 +39,7 @@ The Sample is an independent Maven project with two modules:
 | `station-openapi-sample-spring-boot` | HTTP, Swagger UI, validation, dangerous-operation protection, and Starter MQ |
 | `station-openapi-sample-native-mq` | SDK native RocketMQ Subscriber example |
 
-The Sample depends on the project's `1.0.0-SNAPSHOT` SDK. Before the first run:
+The Sample depends on the project's `1.1.0` SDK. Before the first run:
 
 1. Open the repository root `pom.xml` in IDEA;
 2. Set both Project SDK and Maven Runner JRE to JDK 17;
@@ -212,6 +212,7 @@ This switch prevents accidental operations in the Sample only. Your own APIs sti
 - Objects, lists, and pages return `200 OK`.
 - SDK `void` results and an empty real-time position return `204 No Content`.
 - Downloads use `StreamingResponseBody` to forward bytes as they arrive, without temporary files or automatic retries. A failure after response commitment may leave partial output and cannot become a complete ProblemDetail response.
+- Downloads have no SDK total timeout by default; connection and read waits remain bounded. The Sample sets `spring.mvc.async.request-timeout=0` to remove the separate MVC asynchronous response limit. This applies to all MVC asynchronous requests and can be overridden through standard Spring configuration. `station.openapi.call-timeout` applies only to ordinary JSON calls; see [File Downloads](../../docs/file-download-guide.md) for per-download limits.
 - Validation and SDK errors return `application/problem+json`.
 - Pagination requests use `pageNo`, never `pageNum`.
 - Camera query responses never expose passwords through Swagger. Stream URLs containing user-info, query parameters, fragments, or invalid syntax become `null` to avoid exposing embedded credentials. Other stream URLs remain visible, and the SDK retains its original accessors.

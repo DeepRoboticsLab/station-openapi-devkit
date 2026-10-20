@@ -26,6 +26,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 基于 OkHttp 的 SDK 默认 HTTP 传输实现。
@@ -40,15 +41,9 @@ public final class OkHttpTransport implements HttpTransport {
 
     /** 下载接口同样发送 JSON 请求体。 */
     private static final MediaType JSON_MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
-    /** 普通 JSON 接口的默认读超时，和 SDK builder 默认值保持一致。 */
+    /** 单次阻塞读取的默认等待时限，普通请求和下载均为 10 秒。 */
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(10);
-    /**
-     * 直接调用 transport 且 {@link HttpRequest#readTimeout()} 为 null 时的下载读取超时。
-     *
-     * <p>SDK 执行器始终传入配置值，正常下载默认仍为 10 秒；长下载需通过 RequestOptions 调整超时。</p>
-     */
-    private static final Duration DEFAULT_DOWNLOAD_READ_TIMEOUT = Duration.ofSeconds(60);
-    /** 单次 OkHttp 调用总超时，包含 DNS、连接和读写阶段。 */
+    /** 普通 JSON 调用总超时，包含 DNS、连接和读写阶段；下载默认不设总时限。 */
     private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofSeconds(15);
     private static final int BUFFER_SIZE = 8192;
     /** 限制错误响应大小，避免网关错误页造成无界内存占用。 */
@@ -66,7 +61,7 @@ public final class OkHttpTransport implements HttpTransport {
     public HttpResponse postJson(HttpRequest request) {
         HttpRequest requiredRequest = Objects.requireNonNull(request, "request is required");
         Request okRequest = buildPostRequest(requiredRequest);
-        try (Response response = clientFor(requiredRequest, false).newCall(okRequest).execute()) {
+        try (Response response = clientFor(requiredRequest, DEFAULT_CALL_TIMEOUT).newCall(okRequest).execute()) {
             ResponseBody body = response.body();
             byte[] responseBody;
             if (body == null) {
@@ -90,7 +85,7 @@ public final class OkHttpTransport implements HttpTransport {
         HttpRequest requiredRequest = Objects.requireNonNull(request, "request is required");
         Objects.requireNonNull(outputStream, "outputStream is required");
         Request okRequest = buildPostRequest(requiredRequest);
-        try (Response response = clientFor(requiredRequest, true).newCall(okRequest).execute()) {
+        try (Response response = clientFor(requiredRequest, Duration.ZERO).newCall(okRequest).execute()) {
             Map<String, List<String>> headers = headers(response);
             ResponseBody body = response.body();
             if (body == null) {
@@ -135,15 +130,15 @@ public final class OkHttpTransport implements HttpTransport {
     /**
      * 派生本次调用的超时配置，{@code newBuilder()} 复用原连接池和 dispatcher。
      */
-    private OkHttpClient clientFor(HttpRequest request, boolean download) {
+    private OkHttpClient clientFor(HttpRequest request, Duration defaultCallTimeout) {
         Duration readTimeout = request.readTimeout() == null
-                ? (download ? DEFAULT_DOWNLOAD_READ_TIMEOUT : DEFAULT_READ_TIMEOUT)
-                : request.readTimeout();
-        Duration callTimeout = request.callTimeout() == null ? DEFAULT_CALL_TIMEOUT : request.callTimeout();
+                ? DEFAULT_READ_TIMEOUT : request.readTimeout();
+        Duration callTimeout = request.callTimeout() == null ? defaultCallTimeout : request.callTimeout();
 
         return client.newBuilder()
                 .readTimeout(OkHttpTimeouts.toMillis(readTimeout, "readTimeout"), TimeUnit.MILLISECONDS)
-                .callTimeout(OkHttpTimeouts.toMillis(callTimeout, "callTimeout"), TimeUnit.MILLISECONDS)
+                .callTimeout(callTimeout.isZero() ? 0 : OkHttpTimeouts.toMillis(callTimeout, "callTimeout"),
+                        TimeUnit.MILLISECONDS)
                 .addInterceptor(new SingleProceedInterceptor())
                 .build();
     }
@@ -267,8 +262,9 @@ public final class OkHttpTransport implements HttpTransport {
     private static final class SingleProceedInterceptor implements Interceptor {
         private final AtomicBoolean proceeded = new AtomicBoolean();
 
+        @NotNull
         @Override
-        public Response intercept(Chain chain) throws IOException {
+        public Response intercept(@NotNull Chain chain) throws IOException {
             if (!proceeded.compareAndSet(false, true)) {
                 throw new IOException("Station OpenAPI transport forbids multiple proceeds per SDK attempt");
             }

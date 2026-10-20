@@ -2,7 +2,8 @@
 
 **Language:** English | [简体中文](quickstart.zh-CN.md)
 
-This guide shows how to integrate Station OpenAPI SDK into an existing Spring Boot 3 application and complete the first platform call. The minimum SDK runtime is JDK 17.
+This guide shows how to integrate Station OpenAPI SDK into an existing Spring Boot 3 application and complete the first
+platform call. The minimum SDK runtime is JDK 17.
 
 ## 1. Obtain Platform Configuration
 
@@ -12,41 +13,43 @@ Contact your assigned technical support representative to obtain:
 - Either an AppKey and SecretKey pair or an Access Token;
 - The business operations permitted by those credentials.
 
-Confirm that the target environment supports the features you need: template enable/disable requires platform v1.3.3+, and MQ result alarm levels are available from v1.3.2. The endpoint may include a context path required by the deployment, but do not append an individual `/remoteApi/*` path.
+The endpoint may include a deployment context path, but do not append an individual `/remoteApi/*` path. Template
+enable/disable requires platform v1.3.3+; see [RocketMQ Message Integration](mq-events-guide.md) for MQ field
+availability.
 
 ## 2. Add the SDK to the Project
 
 The SDK is distributed as GitHub source code and is not published to Maven Central. Choose one method:
 
 - **Source integration**: copy SDK core, the OkHttp transport, and the SPI resources into your project.
-- **Private Nexus**: build and publish the complete SDK modules, then depend on `1.0.0-SNAPSHOT`.
+- **Maven dependency**: install the SDK locally or publish it to a private Nexus repository, then depend on
+  `1.1.0`.
 
-See [Source and Dependency Integration](dependency-and-shade.md) for the exact directories and dependencies. If the SDK has already been published to your private Nexus, add:
+See [Source and Dependency Integration](dependency-and-shade.md) for setup. Once the SDK is available in your local or
+private Maven repository, add:
 
 ```xml
 <dependency>
     <groupId>com.deeprobotics.station.openapi</groupId>
     <artifactId>station-openapi-sdk</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
-This dependency resolves only after your private Nexus contains the complete SDK modules.
-
 ## 3. Create the Spring Boot Configuration
 
-The Sample provides complete property binding and a singleton Client bean:
+Copy these two Sample classes into a package scanned by your Spring Boot application:
 
 - [StationOpenApiProperties.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/config/StationOpenApiProperties.java)
 - [StationOpenApiConfiguration.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/config/StationOpenApiConfiguration.java)
 
-Both classes include explanatory comments, startup validation, and Client shutdown configuration. Copy them into your Spring Boot project and adjust the package declaration to match your application.
-
-Keep `StationOpenApiClient` as a singleton bean. Do not create a new Client in controllers, services, or individual business calls.
+They bind properties, validate configuration at startup, and create a singleton `StationOpenApiClient` with
+`destroyMethod="close"`. Reuse this bean for all calls.
 
 ## 4. Configure One Authentication Mode
 
-The Sample separates common settings and the two authentication modes into three configuration files. Your application can use the same structure.
+The Sample separates common settings and the two authentication modes into three configuration files. Your application
+can use the same structure.
 
 ### Token Mode
 
@@ -59,10 +62,10 @@ spring:
 
 station:
   openapi:
-    endpoint: http://station.example.com
+    endpoint: ${STATION_ENDPOINT:}
     connect-timeout: 3s
     read-timeout: 10s
-    call-timeout: 15s
+    call-timeout: 15s # Ordinary JSON calls only
 ```
 
 `application-token.yml`:
@@ -76,7 +79,7 @@ spring:
 station:
   openapi:
     auth-mode: ACCESS_TOKEN
-    access-token: "<Access Token supplied by technical support>"
+    access-token: ${STATION_ACCESS_TOKEN:}
 ```
 
 ### Signature Mode
@@ -92,17 +95,19 @@ spring:
 station:
   openapi:
     auth-mode: SIGNATURE
-    app-key: "<AppKey supplied by technical support>"
-    secret-key: "<SecretKey supplied by technical support>"
+    app-key: ${STATION_APP_KEY:}
+    secret-key: ${STATION_SECRET_KEY:}
 ```
 
-Never enable both modes. Do not configure AppKey/SecretKey in Token mode, and do not configure an Access Token in signature mode. Store real credentials only in local configuration or the credential management system used by your project. Never commit them to a public repository.
+Set `STATION_ENDPOINT` and the credential environment variables for the selected mode. Enable exactly one of `token` and
+`signature`, and configure only its credentials. Never commit real credentials to version control.
 
 See [Authentication and Credentials](auth-and-sign.md) for details.
 
 ## 5. Complete the First Call
 
-Inject the singleton Client into a business service and begin with the platform time operation, which does not modify platform data:
+Inject the singleton Client into a business service and begin with the platform time operation, which does not modify
+platform data:
 
 ```java
 import com.deeprobotics.station.openapi.sdk.StationOpenApiClient;
@@ -123,28 +128,23 @@ public class StationConnectionService {
 }
 ```
 
-After that call succeeds, use the seven Sample services as references for the required business groups:
-
-- [InventorySampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/InventorySampleService.java)
-- [DogSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/DogSampleService.java)
-- [CameraSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/CameraSampleService.java)
-- [TaskTemplateSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/TaskTemplateSampleService.java)
-- [TaskSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/TaskSampleService.java)
-- [ResultSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/ResultSampleService.java)
-- [SystemSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/SystemSampleService.java)
-
-These classes build explicit SDK requests and call the public APIs without any additional backend dependencies.
+For the seven API groups, see the request construction and calls in
+the [Sample services](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/).
 
 ## 6. Handle Results
 
 - Pagination uses `pageNo`, starting at 1. Do not use `pageNum`.
-- Every SDK exception extends `StationOpenApiException`. You may log its `requestId`, `operation`, `code`, and `resultUnknown`.
+- Catch `StationOpenApiException` to handle HTTP SDK failures. You may log its `requestId`, `operation`, `code`, and
+  `resultUnknown`.
 - Never log complete request bodies, response bodies, or credentials.
-- If a write or control operation fails with `resultUnknown=true`, query the state or wait for an MQ message before deciding whether to repeat it.
+- If a write or control operation fails with `resultUnknown=true`, query the state or wait for an MQ message before
+  deciding whether to repeat it.
 - Download files through `OutputStream`. Downloads make one attempt and may leave partial output on failure.
 
-See [Retries and Result Confirmation](retry-and-idempotency.md) and [File Downloads](file-download-guide.md) for detailed behavior.
+See [Retries and Result Confirmation](retry-and-idempotency.md) and [File Downloads](file-download-guide.md) for
+detailed behavior.
 
 ## 7. Run the Complete Sample
 
-To inspect all 28 operations, request parameters, and response structures, run the [Spring Boot Sample](../samples/station-openapi-spring-boot-sample/README.md) in IDEA and use Swagger UI.
+To inspect all 28 operations, request parameters, and response structures, run
+the [Spring Boot Sample](../samples/station-openapi-spring-boot-sample/README.md) in IDEA and use Swagger UI.

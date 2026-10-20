@@ -57,7 +57,7 @@ public final class RequestOptions {
     }
 
     /**
-     * 返回读取超时覆盖值；为 {@code null} 时使用 {@link StationOpenApiConfig#readTimeout()}。
+     * 返回单次阻塞读取的等待时限；为 {@code null} 时使用 {@link StationOpenApiConfig#readTimeout()}。
      *
      * @return 读取超时覆盖值或 {@code null}
      */
@@ -66,7 +66,8 @@ public final class RequestOptions {
     }
 
     /**
-     * 返回总超时覆盖值；为 {@code null} 时使用 {@link StationOpenApiConfig#callTimeout()}。
+     * 返回总超时覆盖值；为 {@code null} 时，普通 JSON 调用使用 {@link StationOpenApiConfig#callTimeout()}，
+     * 下载不设总时限。
      *
      * @return 调用总超时覆盖值或 {@code null}
      */
@@ -105,7 +106,7 @@ public final class RequestOptions {
     }
 
     /**
-     * 单次调用选项构造器。未设置的超时字段继续使用客户端全局配置。
+     * 单次调用选项构造器。读取超时默认继承客户端配置；总超时按调用类型取默认值。
      */
     public static final class Builder {
         private String requestId;
@@ -128,7 +129,7 @@ public final class RequestOptions {
         }
 
         /**
-         * 覆盖本次调用读取超时。
+         * 覆盖本次调用中单次阻塞读取的等待时限，不限制整份文件的传输时长。
          *
          * @param readTimeout 正数读取超时，传 {@code null} 时使用客户端默认值
          * @return 当前构造器
@@ -141,7 +142,7 @@ public final class RequestOptions {
         /**
          * 覆盖本次调用总超时。
          *
-         * @param callTimeout 正数调用总超时，传 {@code null} 时使用客户端默认值
+         * @param callTimeout 正数调用总超时；{@code null} 表示普通 JSON 调用继承客户端配置、下载不设总时限
          * @return 当前构造器
          */
         public Builder callTimeout(Duration callTimeout) {

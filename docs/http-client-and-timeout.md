@@ -2,11 +2,13 @@
 
 **Language:** English | [简体中文](http-client-and-timeout.zh-CN.md)
 
-Most Spring Boot projects only need an endpoint and three timeout values, together with one shared `StationOpenApiClient` bean.
+These settings govern SDK connections to the platform and use the `station.openapi` binding from
+the [Spring Boot Quickstart](quickstart.md).
 
 ## 1. Endpoint
 
-The endpoint is supplied by technical support and is a complete root address beginning with `http://` or `https://`, for example:
+The endpoint is supplied by technical support and is a complete root address beginning with `http://` or `https://`, for
+example:
 
 ```yaml
 station:
@@ -22,23 +24,31 @@ The endpoint may include the context path required by the platform deployment. D
 
 ## 2. Default Timeouts
 
-| Property | Default | Purpose |
-|---|---:|---|
-| `connect-timeout` | `3s` | Maximum time to establish a network connection |
-| `read-timeout` | `10s` | Maximum time to wait for and read response data |
-| `call-timeout` | `15s` | Maximum total time for one complete call |
+| Property          | Default | Purpose                                                  |
+|-------------------|--------:|----------------------------------------------------------|
+| `connect-timeout` |    `3s` | Maximum time to establish a network connection           |
+| `read-timeout`    |   `10s` | Maximum wait for each blocking read, including downloads |
+| `call-timeout`    |   `15s` | Maximum total time for each ordinary JSON HTTP attempt   |
 
-Start with the defaults for normal queries. Increase the read and call timeouts only when large downloads or longer platform processing require it. Every timeout must be positive.
+Downloads have no total timeout by default. A file can take longer than 10 or 15 seconds as long as data keeps arriving
+within the read timeout. Connection and read timeouts still apply, including while waiting for the response to start.
+
+Client timeout settings and explicit `RequestOptions` overrides must be positive. To impose a total limit on a download,
+set `RequestOptions.callTimeout`; the global `call-timeout` does not apply to downloads.
 
 ## 3. Reuse a Singleton Client
 
-The Sample's [StationOpenApiConfiguration.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/config/StationOpenApiConfiguration.java) creates a singleton bean and uses `destroyMethod = "close"` to release resources when the application stops.
+The
+Sample's [StationOpenApiConfiguration.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/config/StationOpenApiConfiguration.java)
+creates a singleton bean and uses `destroyMethod = "close"` to release resources when the application stops.
 
-Inject that bean into business services through their constructors. Do not rebuild a Client in controllers, scheduled tasks, or individual requests, because doing so prevents connection reuse.
+Reuse the bean to share connections. A Client closes only the transport it creates; a transport supplied through
+`.transport(...)` remains the caller's responsibility.
 
 ## 4. Override Timeouts for One Call
 
-When only one query or download needs more time, override its read and call timeouts with `RequestOptions`:
+Use `RequestOptions` to allow longer waits between reads or to impose a total limit on one download. This example allows
+a two-minute read wait and explicitly limits the download to three minutes:
 
 ```java
 RequestOptions options = RequestOptions.builder()
@@ -50,13 +60,22 @@ RequestOptions options = RequestOptions.builder()
 client.result().downloadResource(request, outputStream, options);
 ```
 
-Properties not overridden continue to use the Client defaults. `requestId` correlates logs and exceptions; it is not a business idempotency key.
+An omitted read timeout inherits the Client setting. An omitted call timeout uses the Client setting for JSON calls and
+leaves downloads without a total limit. `requestId` correlates logs and exceptions; it is not a business idempotency
+key.
 
 ## 5. Custom OkHttp
 
-Customize OkHttp only when the application must reuse an existing proxy, connection pool, or network interceptor. The available entry points and ownership rules are documented in [OkHttpTransportFactory.java](../station-openapi-sdk-transport-okhttp/src/main/java/com/deeprobotics/station/openapi/sdk/transport/okhttp/OkHttpTransportFactory.java).
+To reuse a proxy, connection pool, or interceptor, wrap your `OkHttpClient`
+with [OkHttpTransportFactory.create (client)](../station-openapi-sdk-transport-okhttp/src/main/java/com/deeprobotics/station/openapi/sdk/transport/okhttp/OkHttpTransportFactory.java)
+and pass the transport to `.transport(...)`.
 
-Use the SDK's default transport when none of those requirements apply. Do not enable OkHttp automatic retries or redirects, because they can resend write or control requests below the SDK's safety rules.
+The factory disables automatic retries and redirects. Do not add retry logic in interceptors, which could repeat write
+or control operations.
+
+For a custom transport implementation, follow
+the [HttpTransport contract](../station-openapi-sdk-core/src/main/java/com/deeprobotics/station/openapi/sdk/http/HttpTransport.java),
+including stream ownership and timeout semantics.
 
 ## 6. Troubleshooting Connectivity
 
@@ -68,4 +87,5 @@ Check these items in order:
 4. The credentials belong to the same environment;
 5. The failure occurred during the connect, read, or call timeout stage.
 
-Use the exception's `requestId`, `operation`, and `code` for troubleshooting. Do not log full request bodies, response bodies, or credentials.
+Use the exception's `requestId`, `operation`, and `code` for troubleshooting. Do not log full request bodies, response
+bodies, or credentials.

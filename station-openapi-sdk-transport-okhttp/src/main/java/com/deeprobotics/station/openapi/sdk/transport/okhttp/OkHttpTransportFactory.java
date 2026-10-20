@@ -4,7 +4,6 @@ import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiClientExcept
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionPool;
-import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 
 /**
@@ -20,16 +19,12 @@ public final class OkHttpTransportFactory {
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
     /** 普通请求读超时默认 10 秒；单次请求可通过 RequestOptions 覆盖。 */
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(10);
-    /** call timeout 限制整个 HTTP 调用总耗时，防止某个阶段长时间挂起。 */
+    /** 普通 JSON 调用的默认总时限；transport 为下载单独关闭总时限。 */
     private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofSeconds(15);
     /** 默认保留少量空闲连接，兼顾 SDK 连续调用性能和客户进程资源占用。 */
     private static final int DEFAULT_MAX_IDLE_CONNECTIONS = 10;
     /** 空闲连接最多在连接池保留 5 分钟，超过时间由 OkHttp 回收。 */
     private static final Duration DEFAULT_KEEP_ALIVE = Duration.ofMinutes(5);
-    /** Dispatcher 全局并发上限使用 OkHttp 常见默认量级，避免 SDK 自身成为瓶颈。 */
-    private static final int DEFAULT_MAX_REQUESTS = 64;
-    /** 单 host 并发保守限制，避免客户批量查询时压垮同一站点服务。 */
-    private static final int DEFAULT_MAX_REQUESTS_PER_HOST = 5;
 
     private OkHttpTransportFactory() {
     }
@@ -96,14 +91,10 @@ public final class OkHttpTransportFactory {
      */
     public static OkHttpClient newDefaultClient(Duration connectTimeout) {
         long connectTimeoutMillis = OkHttpTimeouts.toMillis(connectTimeout, "connectTimeout");
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequests(DEFAULT_MAX_REQUESTS);
-        dispatcher.setMaxRequestsPerHost(DEFAULT_MAX_REQUESTS_PER_HOST);
 
         return new OkHttpClient.Builder()
                 .connectionPool(new ConnectionPool(DEFAULT_MAX_IDLE_CONNECTIONS,
                         DEFAULT_KEEP_ALIVE.toMinutes(), TimeUnit.MINUTES))
-                .dispatcher(dispatcher)
                 .connectTimeout(connectTimeoutMillis, TimeUnit.MILLISECONDS)
                 .readTimeout(DEFAULT_READ_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                 .callTimeout(DEFAULT_CALL_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)

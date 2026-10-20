@@ -2,19 +2,21 @@
 
 **Language:** English | [简体中文](dependency-and-shade.zh-CN.md)
 
-Station OpenAPI SDK is distributed as source code through the company's public GitHub repository. No official JAR is published to Maven Central. The current source and private artifact version is `1.0.0-SNAPSHOT`.
+Station OpenAPI SDK is distributed as source code through GitHub. No official JAR is published to Maven Central. The
+current source version is `1.1.0` and requires JDK 17 or later.
 
-You can either copy the source code directly or publish the SDK to your own private Nexus repository.
+Copy the source code, install the SDK in your local Maven repository, or publish it to a private Nexus repository.
 
 ## 1. Copy the Source Code
 
-Merge the following source and resource content into the corresponding directories of your Spring Boot module while preserving the original packages:
+Merge the following source and resource content into the corresponding directories of your Spring Boot module while
+preserving the original packages:
 
-| Content in this repository | Destination in the customer project |
-|---|---|
-| Everything under `station-openapi-sdk-core/src/main/java/` | `src/main/java/` |
-| Everything under `station-openapi-sdk-transport-okhttp/src/main/java/` | `src/main/java/` |
-| Everything under `station-openapi-sdk-transport-okhttp/src/main/resources/` | `src/main/resources/` |
+| Content in this repository                                                  | Destination in the customer project |
+|-----------------------------------------------------------------------------|-------------------------------------|
+| Everything under `station-openapi-sdk-core/src/main/java/`                  | `src/main/java/`                    |
+| Everything under `station-openapi-sdk-transport-okhttp/src/main/java/`      | `src/main/java/`                    |
+| Everything under `station-openapi-sdk-transport-okhttp/src/main/resources/` | `src/main/resources/`               |
 
 The transport resources contain the JDK SPI registration for the default HTTP transport and must be copied:
 
@@ -22,9 +24,10 @@ The transport resources contain the JDK SPI registration for the default HTTP tr
 META-INF/services/com.deeprobotics.station.openapi.sdk.http.HttpTransportProvider
 ```
 
-If this file is missing, `StationOpenApiClients.builder().build()` cannot discover the default OkHttp implementation.
+Without this file, the SDK cannot discover its default OkHttp transport.
 
-Projects using `spring-boot-starter-web` normally already include Jackson and SLF4J. Also confirm that the project includes OkHttp:
+Projects using `spring-boot-starter-web` normally already include Jackson and SLF4J. Also confirm that the project
+includes OkHttp:
 
 ```xml
 <dependency>
@@ -34,7 +37,8 @@ Projects using `spring-boot-starter-web` normally already include Jackson and SL
 </dependency>
 ```
 
-The root `pom.xml` is authoritative for exact dependency versions. Copy all SDK source content; do not omit `internal` packages, because the public APIs depend on those execution implementations.
+Use the dependency versions in the [root POM](../pom.xml). Copy the complete source directories, including `internal`
+packages.
 
 ### Add RocketMQ Support
 
@@ -44,21 +48,27 @@ To use the SDK message models, Router, or native Subscriber, also copy:
 station-openapi-sdk-rocketmq/src/main/java/
 ```
 
-For Spring Boot, use the [main Sample POM](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/pom.xml) as the reference dependency combination for SDK RocketMQ source and RocketMQ Starter. See [RocketMQ Message Integration](mq-events-guide.md) for configuration.
+Include the native client dependency declared in the [RocketMQ module POM](../station-openapi-sdk-rocketmq/pom.xml). For
+RocketMQ Starter dependencies and configuration, see [RocketMQ Message Integration](mq-events-guide.md).
 
-## 2. Publish to a Private Nexus Repository
+## 2. Use a Maven Repository
 
-If multiple applications need the SDK, the customer team can build it and publish it to the corporate Nexus repository.
+For local development, run this from the repository root with JDK 17 and Maven 3.9+:
 
-Build the root project with JDK 17 and Maven 3.9+, then use the organization's existing Maven and Nexus publishing configuration to publish the complete SDK module set. Do not upload only the `station-openapi-sdk` JAR, because it depends on core, the OkHttp transport, and their POM metadata.
+```shell
+mvn clean install
+```
 
-After publishing, add this dependency to a Spring Boot project:
+For shared use, publish the parent POM and SDK modules through your organization's Maven/Nexus configuration. The
+`station-openapi-sdk` JAR alone is insufficient: it depends on core, the OkHttp transport, and their POMs.
+
+Once installed or published, add:
 
 ```xml
 <dependency>
     <groupId>com.deeprobotics.station.openapi</groupId>
     <artifactId>station-openapi-sdk</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -68,11 +78,11 @@ Add the optional RocketMQ module only when needed:
 <dependency>
     <groupId>com.deeprobotics.station.openapi</groupId>
     <artifactId>station-openapi-sdk-rocketmq</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
-The business project must declare its corporate Nexus address and authentication through its own Maven configuration. The SDK repository does not provide or modify customer Nexus settings.
+When using Nexus, configure its address and authentication in your application's Maven environment.
 
 ## 3. Default Dependencies and Conflict Handling
 
@@ -82,7 +92,8 @@ The business project must declare its corporate Nexus address and authentication
 - `station-openapi-sdk-transport-okhttp`: the default HTTP implementation;
 - OkHttp and its transitive dependencies.
 
-If the application already uses other OkHttp, Okio, or Kotlin versions, inspect the final versions in IDEA's Maven dependency view and align them. Do not retain multiple versions, and do not change OkHttp to `provided`.
+If the application already uses other OkHttp, Okio, or Kotlin versions, inspect the final versions in IDEA's Maven
+dependency view and align them. Do not retain multiple versions, and do not change OkHttp to `provided`.
 
 Use `station-openapi-sdk-all` only when normal dependency alignment cannot resolve a conflict:
 
@@ -90,16 +101,12 @@ Use `station-openapi-sdk-all` only when normal dependency alignment cannot resol
 <dependency>
     <groupId>com.deeprobotics.station.openapi</groupId>
     <artifactId>station-openapi-sdk-all</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
-Choose either `station-openapi-sdk-all` or the default `station-openapi-sdk`, never both. The all-in-one artifact is a conflict fallback, not the default choice.
+Choose either `station-openapi-sdk-all` or `station-openapi-sdk`. The shaded artifact includes the HTTP SDK and
+relocates `okhttp3`, `okio`, and `kotlin`; it does not include RocketMQ. Jackson and SLF4J retain their original package
+names.
 
-## 4. Integration Checks
-
-- The application uses JDK 17 or later.
-- Source integration includes the SPI resource file.
-- The private Nexus contains every required SDK POM and JAR.
-- `StationOpenApiClients.builder().build()` creates the Client successfully.
-- The first `client.system().getTimeText()` call succeeds.
+Continue with the [Spring Boot Quickstart](quickstart.md) to configure the Client and make the first call.

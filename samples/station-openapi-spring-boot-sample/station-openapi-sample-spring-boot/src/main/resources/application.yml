@@ -1,4 +1,8 @@
 spring:
+  mvc:
+    async:
+      # 流式下载不设响应总时限；SDK 仍限制建连和阻塞读取的等待时间。
+      request-timeout: 0
   messages:
     basename: i18n/messages
     encoding: UTF-8
@@ -11,6 +15,7 @@ station:
     endpoint: ${STATION_ENDPOINT:}
     connect-timeout: ${STATION_CONNECT_TIMEOUT:3s}
     read-timeout: ${STATION_READ_TIMEOUT:10s}
+    # 仅用于普通 JSON 接口；下载默认不设总时限。
     call-timeout: ${STATION_CALL_TIMEOUT:15s}
     mq:
       enabled: ${STATION_MQ_ENABLED:false}

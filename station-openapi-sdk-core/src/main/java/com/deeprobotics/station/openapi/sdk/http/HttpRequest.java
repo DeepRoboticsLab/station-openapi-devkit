@@ -27,7 +27,7 @@ public final class HttpRequest {
      * @param headers 最终 header；null 按空集合处理，null key/value 会被忽略
      * @param body UTF-8 JSON body；null 按空字节数组处理
      * @param readTimeout 本次读取超时；自定义 transport 可为 null 提供自己的兜底值
-     * @param callTimeout 本次调用总超时；自定义 transport 可为 null 提供自己的兜底值
+     * @param callTimeout 本次调用总超时；{@link Duration#ZERO} 表示不限总时长，null 使用 transport 的操作默认值
      * @throws StationOpenApiClientException header 名称或值包含 CR/LF 时抛出；异常不会回显原值
      */
     public HttpRequest(URI url, Map<String, String> headers, byte[] body, Duration readTimeout,
@@ -78,7 +78,7 @@ public final class HttpRequest {
     /**
      * 返回本次请求调用总超时。
      *
-     * @return 调用总超时；自定义请求快照可能为 {@code null}
+     * @return 调用总超时；{@link Duration#ZERO} 表示不限总时长；自定义请求快照可能为 {@code null}
      */
     public Duration callTimeout() {
         return callTimeout;

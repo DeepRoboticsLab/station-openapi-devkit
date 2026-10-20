@@ -101,7 +101,7 @@ public final class StationOpenApiClients {
         }
 
         /**
-         * 读取超时，默认 10 秒；单次调用可通过 {@link RequestOptions} 覆盖。
+         * 单次阻塞读取的等待时限，默认 10 秒；单次调用可通过 {@link RequestOptions} 覆盖。
          *
          * @param readTimeout 大于 0 的默认读取超时
          * @return 当前构造器
@@ -112,7 +112,7 @@ public final class StationOpenApiClients {
         }
 
         /**
-         * 单次调用总超时，默认 15 秒；单次调用可通过 {@link RequestOptions} 覆盖。
+         * 普通 JSON 调用总超时，默认 15 秒；下载默认不设总时限，需用 {@link RequestOptions} 单独设置。
          *
          * @param callTimeout 大于 0 的默认调用总超时
          * @return 当前构造器

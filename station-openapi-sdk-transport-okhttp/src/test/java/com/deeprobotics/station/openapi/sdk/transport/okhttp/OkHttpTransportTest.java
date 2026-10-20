@@ -7,6 +7,7 @@ import com.deeprobotics.station.openapi.sdk.RequestOptions;
 import com.deeprobotics.station.openapi.sdk.StationOpenApiClient;
 import com.deeprobotics.station.openapi.sdk.StationOpenApiClients;
 import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiClientException;
+import com.deeprobotics.station.openapi.sdk.exception.StationOpenApiTimeoutException;
 import com.deeprobotics.station.openapi.sdk.http.HttpRequest;
 import com.deeprobotics.station.openapi.sdk.http.HttpResponse;
 import com.deeprobotics.station.openapi.sdk.http.HttpConnectionException;
@@ -127,6 +128,25 @@ class OkHttpTransportTest {
     }
 
     @Test
+    void sdkJsonStillUsesGlobalCallTimeout() {
+        MockWebServer server = newServer();
+        server.enqueue(new MockResponse().setBody("{\"success\":true,\"data\":\"time\"}")
+                .setHeadersDelay(1, TimeUnit.SECONDS));
+
+        try (StationOpenApiClient client = StationOpenApiClients.builder()
+                .endpoint(server.url("/").toString())
+                .accessToken("timeout-test-token")
+                .readTimeout(Duration.ofSeconds(3))
+                .callTimeout(Duration.ofMillis(100))
+                .build()) {
+            assertThatThrownBy(() -> client.system().getTimeText(RequestOptions.builder()
+                    .retryPolicy(RequestOptions.RetryPolicy.NEVER).build()))
+                    .isInstanceOf(StationOpenApiTimeoutException.class);
+        }
+        assertThat(server.getRequestCount()).isEqualTo(1);
+    }
+
+    @Test
     void defaultClientDisablesOkHttpRetriesAndRedirects() {
         // 自动重试和重定向都可能绕过 core 的操作意图判断，尤其会影响控制/写入类请求的安全边界。
         OkHttpClient client = OkHttpTransportFactory.newDefaultClient();
@@ -134,8 +154,6 @@ class OkHttpTransportTest {
             assertThat(client.retryOnConnectionFailure()).isFalse();
             assertThat(client.followRedirects()).isFalse();
             assertThat(client.followSslRedirects()).isFalse();
-            assertThat(client.dispatcher().getMaxRequests()).isEqualTo(64);
-            assertThat(client.dispatcher().getMaxRequestsPerHost()).isEqualTo(5);
         } finally {
             client.dispatcher().executorService().shutdownNow();
             client.connectionPool().evictAll();

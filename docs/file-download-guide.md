@@ -2,11 +2,13 @@
 
 **Language:** English | [简体中文](file-download-guide.zh-CN.md)
 
-The Station OpenAPI resource download operation returns a binary stream. Pass an `OutputStream` to receive it directly. The SDK uses an 8 KiB buffer, performs no filesystem operations, and never buffers the complete file.
+The Station OpenAPI resource download operation returns a binary stream. Pass an `OutputStream` to receive it directly.
+The SDK uses an 8 KiB buffer, performs no filesystem operations, and never buffers the complete file.
 
 ## 1. Download to an OutputStream
 
-`filePath` must come from a platform query result or a RocketMQ task result. It is not a path on the customer application's local filesystem.
+`filePath` must come from a platform query result or a RocketMQ task result. It is not a path on the customer
+application's local filesystem.
 
 ```java
 ResourceDownloadRequest request = ResourceDownloadRequest.builder()
@@ -19,12 +21,14 @@ client.result().downloadResource(request, outputStream);
 
 Resource types:
 
-| Enum | Purpose |
-|---|---|
-| `ResourceDownloadRequest.Type.MAP_FILE` | Map file |
+| Enum                                           | Purpose                                     |
+|------------------------------------------------|---------------------------------------------|
+| `ResourceDownloadRequest.Type.MAP_FILE`        | Map file                                    |
 | `ResourceDownloadRequest.Type.RESULT_RESOURCE` | Inspection image or another result resource |
 
-The caller owns and closes the output stream. The SDK makes one attempt, even with `RetryPolicy.DEFAULT`. Connection failures, timeouts, and output failures report `resultUnknown=true`: output may be incomplete. Discard that output before restarting; never append a new attempt to it. HTTP errors and unexpected content types are checked before any file bytes are written, and JSON errors are parsed into SDK exceptions.
+The caller owns and closes the output stream. Downloads make one attempt, regardless of retry settings. Connection
+failures, timeouts, and output failures report `resultUnknown=true`; discard incomplete output before restarting. Only
+successful `application/octet-stream` responses are written; JSON errors are parsed into SDK exceptions.
 
 ## 2. Save a File in Your Application
 
@@ -37,7 +41,9 @@ try (OutputStream output = Files.newOutputStream(target)) {
 }
 ```
 
-This requires an existing, writable parent directory and immediately creates or truncates the target. Your application manages paths, permissions, overwrite policy, and incomplete-file cleanup. The SDK does not require a writable disk when forwarding to another stream. Avoid using a `ByteArrayOutputStream` for large files because it holds the entire file in memory.
+The parent directory must exist and be writable. `Files.newOutputStream` creates or truncates the target; your
+application handles incomplete-file cleanup. Avoid `ByteArrayOutputStream` for large files because it holds the entire
+file in memory.
 
 ## 3. Forward Through Spring MVC
 
@@ -48,33 +54,33 @@ StreamingResponseBody body = outputStream ->
         client.result().downloadResource(request, outputStream, options);
 ```
 
-Spring owns the Servlet output stream; the SDK never closes it. Bytes are forwarded as they arrive. If the response has already been committed when a failure occurs, it cannot be replaced with a complete ProblemDetail response; the client must not treat partial output as a complete file.
+Spring owns the Servlet output stream; the SDK never closes it. Bytes are forwarded as they arrive. If the response has
+already been committed when a failure occurs, it cannot be replaced with a complete ProblemDetail response; the client
+must not treat partial output as a complete file.
+
+`StreamingResponseBody` starts MVC asynchronous processing. The Sample sets `spring.mvc.async.request-timeout=0` to
+disable its total timeout. This setting applies to all MVC asynchronous requests and can be overridden with a positive
+duration; SDK connection and read timeouts still apply.
 
 See these complete Spring MVC examples:
 
 - [ResultSampleController.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/web/ResultSampleController.java)
 - [ResultSampleService.java](../samples/station-openapi-spring-boot-sample/station-openapi-sample-spring-boot/src/main/java/com/deeprobotics/station/openapi/sample/service/ResultSampleService.java)
 
-## 4. Timeouts for Large Files
+## 4. Download Timeouts
 
-Use longer read and call timeouts for one large download when necessary:
+Downloads have no total timeout by default and do not inherit the Client's global call timeout. Connection and read
+timeouts still apply: 3 seconds to connect and 10 seconds per blocking read by default.
 
-```java
-RequestOptions options = RequestOptions.builder()
-        .requestId("result-download-0001")
-        .readTimeout(Duration.ofMinutes(2))
-        .callTimeout(Duration.ofMinutes(3))
-        .build();
-```
-
-Do not permanently increase every normal request timeout to accommodate one large file.
+Use `RequestOptions.readTimeout` for longer waits for data, or `RequestOptions.callTimeout` to set a total limit for one
+download. See [HTTP and Timeout Configuration](http-client-and-timeout.md) for an example.
 
 ## 5. Expose Downloads Through Your Application
 
 If the customer application exposes a download API to other users:
 
-- Do not allow an external caller to submit an arbitrary platform `filePath`;
-- Authorize access using your own business resource ID, then obtain a trusted `filePath`;
+- Authorize access using a business resource ID, then obtain a trusted `filePath`; do not accept arbitrary platform
+  paths;
 - Use a safe filename to prevent path traversal and response header injection;
 - Do not report success when only a partial file was produced;
 - Do not log complete resource locations or raw response content.

@@ -134,7 +134,7 @@ public final class StationOpenApiConfig {
     }
 
     /**
-     * 返回默认读取超时。文件下载不会自动放大该值，长下载应通过 {@link RequestOptions} 显式覆盖。
+     * 返回单次阻塞读取的默认等待时限，适用于普通请求和下载，不限制整份文件的传输时长。
      *
      * @return 大于 0 的默认读取超时
      */
@@ -143,7 +143,7 @@ public final class StationOpenApiConfig {
     }
 
     /**
-     * 返回默认调用总超时。长下载若只放大读取超时而总超时仍较短，会先被总超时中断；两者应协调配置。
+     * 返回普通 JSON 调用的默认总超时。下载默认不设总时限，可通过 {@link RequestOptions} 单独设置。
      *
      * @return 大于 0 的默认调用总超时
      */
@@ -322,7 +322,7 @@ public final class StationOpenApiConfig {
         }
 
         /**
-         * 默认读取超时；单次请求可用 {@link RequestOptions} 覆盖。
+         * 单次阻塞读取的默认等待时限；单次请求可用 {@link RequestOptions} 覆盖。
          *
          * @param readTimeout 大于 0 的默认读取超时
          * @return 当前构造器
@@ -333,7 +333,7 @@ public final class StationOpenApiConfig {
         }
 
         /**
-         * 默认调用总超时；单次请求可用 {@link RequestOptions} 覆盖。
+         * 普通 JSON 调用的默认总超时，不用于下载；单次请求可用 {@link RequestOptions} 覆盖。
          *
          * @param callTimeout 大于 0 的默认调用总超时
          * @return 当前构造器

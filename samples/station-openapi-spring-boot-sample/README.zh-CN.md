@@ -39,7 +39,7 @@ Sample 是独立的 Maven 项目，包含：
 | `station-openapi-sample-spring-boot` | HTTP、Swagger UI、参数校验、危险操作保护和 Starter MQ |
 | `station-openapi-sample-native-mq` | SDK 原生 RocketMQ Subscriber 示例 |
 
-Sample 依赖本项目的 `1.0.0-SNAPSHOT` SDK。第一次运行前：
+Sample 依赖本项目的 `1.1.0` SDK。第一次运行前：
 
 1. 使用 IDEA 打开仓库根 `pom.xml`；
 2. 把 Project SDK 和 Maven Runner JRE 都设置为 JDK 17；
@@ -212,6 +212,7 @@ sample:
 - 对象、列表和分页正常返回 `200 OK`。
 - SDK `void` 和空的实时坐标返回 `204 No Content`。
 - 文件下载使用 `StreamingResponseBody` 随接收随转发，不使用临时文件或自动重试；响应提交后失败可能留下部分输出，无法再转换为完整 ProblemDetail 响应。
+- SDK 下载默认无总时限，连接和读取等待仍有超时。Sample 设置 `spring.mvc.async.request-timeout=0`，关闭独立的 MVC 异步响应总时限；该配置作用于所有 MVC 异步请求，可通过标准 Spring 配置覆盖。`station.openapi.call-timeout` 仅用于普通 JSON 调用；单次下载总时限见[文件下载](../../docs/file-download-guide.zh-CN.md)。
 - 校验和 SDK 异常返回 `application/problem+json`。
 - 分页请求使用 `pageNo`，不要使用 `pageNum`。
 - 摄像机查询结果不会向 Swagger 返回密码；含账号、查询参数、片段或无法解析的流地址会置为 `null`，避免 URL 内的凭据泄露。无这些内容的流地址正常展示，SDK 原始访问器保持可用。

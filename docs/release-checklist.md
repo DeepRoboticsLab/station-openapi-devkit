@@ -7,10 +7,10 @@ Use this checklist after configuring the SDK or Sample to confirm the basic inte
 ## SDK and Application
 
 - [ ] The application uses JDK 17 or later.
-- [ ] Spring Boot uses version 3.x.
-- [ ] The SDK source is copied into the project, or the complete SDK modules are available from a private Nexus.
+- [ ] Applications using the Sample configuration run Spring Boot 3.x.
+- [ ] The SDK source is copied into the project, or the SDK dependencies resolve from a local or private Maven
+  repository.
 - [ ] Source integration includes the OkHttp transport `META-INF/services` SPI file.
-- [ ] The source or private artifacts use version `1.0.0-SNAPSHOT`.
 
 ## Endpoint and Credentials
 
@@ -18,11 +18,11 @@ Use this checklist after configuring the SDK or Sample to confirm the basic inte
 - [ ] No individual `/remoteApi/*` path is appended to the endpoint.
 - [ ] Technical support supplied either an Access Token or an AppKey and SecretKey pair.
 - [ ] Exactly one of Token and signature authentication is enabled.
-- [ ] Real credentials are not committed to a public repository or written to logs.
+- [ ] Real credentials are not committed to version control or written to logs.
 
 ## First Calls
 
-- [ ] Spring creates only one `StationOpenApiClient` bean.
+- [ ] Calls to the same platform with the same credentials reuse one Client; Spring applications use a singleton bean.
 - [ ] The Client calls `close()` when the application stops.
 - [ ] `client.system().getTimeText()` succeeds.
 - [ ] At least one Inventory query succeeds.
@@ -31,8 +31,11 @@ Use this checklist after configuring the SDK or Sample to confirm the basic inte
 
 ## Optional Capabilities
 
-- [ ] File downloads use `OutputStream`, never load the complete file into a `byte[]`, and discard incomplete output before restarting.
+- [ ] File downloads use `OutputStream`, never load the complete file into a `byte[]`, and discard incomplete output
+  before restarting.
 - [ ] A write or control failure with `resultUnknown=true` is confirmed before any repeat attempt.
-- [ ] The Sample's eleven dangerous operations remain locked by default or are enabled only after confirming the target.
-- [ ] When MQ is required, technical support has supplied the NameServer and confirmed the topic and message permissions.
+- [ ] The Sample's eleven write/control operations remain disabled unless `sample.dangerous-operations-enabled=true` is
+  explicitly configured.
+- [ ] When MQ is required, technical support has supplied the NameServer and confirmed the topic and message
+  permissions.
 - [ ] MQ handlers tolerate duplicate messages and never log the raw message body.
