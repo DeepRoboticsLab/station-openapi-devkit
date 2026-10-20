@@ -67,7 +67,8 @@ public final class StationOpenApiConfig {
     }
 
     /**
-     * 创建配置构造器。默认连接超时为 3 秒、读取超时为 10 秒、调用总超时为 15 秒。
+     * 创建配置构造器。默认连接超时为 3 秒、读取超时为 10 秒。
+     * 普通 JSON 请求每次 HTTP 尝试的总超时为 15 秒；下载默认不设总时限。
      *
      * @return 带有 SDK 默认超时的配置构造器
      */
@@ -143,7 +144,7 @@ public final class StationOpenApiConfig {
     }
 
     /**
-     * 返回普通 JSON 调用的默认总超时。下载默认不设总时限，可通过 {@link RequestOptions} 单独设置。
+     * 返回普通 JSON 请求每次 HTTP 尝试的默认总超时。下载默认不设总时限，可通过 {@link RequestOptions} 单独设置。
      *
      * @return 大于 0 的默认调用总超时
      */
@@ -333,7 +334,7 @@ public final class StationOpenApiConfig {
         }
 
         /**
-         * 普通 JSON 调用的默认总超时，不用于下载；单次请求可用 {@link RequestOptions} 覆盖。
+         * 普通 JSON 请求每次 HTTP 尝试的默认总超时，不用于下载；可用 {@link RequestOptions} 覆盖。
          *
          * @param callTimeout 大于 0 的默认调用总超时
          * @return 当前构造器

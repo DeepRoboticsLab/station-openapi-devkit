@@ -17,7 +17,7 @@ public interface SystemApi {
      *
      * <p>对应 {@code POST /remoteApi/time}，返回平台成功响应中的时间文本。
      * 返回值可能采用 {@code LocalDateTime.toString()} 形态，例如 {@code 2026-07-07T10:20:30.123}；
-     * SDK 不强制转换为 {@code LocalDateTime}，避免客户现场因时区、毫秒精度或格式差异导致解析失败。</p>
+     * SDK 不强制转换为 {@code LocalDateTime}，避免因时区、毫秒精度或格式差异导致解析失败。</p>
      *
      * @return 非 null 的服务器时间字符串
      * @throws StationOpenApiSerializationException 平台成功响应未包含 {@code data}

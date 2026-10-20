@@ -51,7 +51,7 @@ public final class TaskPointResultPageRequest extends PageRequestSupport {
     public LinkedHashMap<String, Object> toMap() {
         /*
          * 结果分页是普通 JSON READ_ONLY 接口。taskExecuteCode 必填，分页字段由公共基类统一归一，
-         * 这样客户在任务分页和结果分页之间切换时看到一致的 pageNo/pageSize 规则。
+         * 这样调用方在任务分页和结果分页之间切换时看到一致的 pageNo/pageSize 规则。
          */
         LinkedHashMap<String, Object> body = MapUtils.newBody();
         body.put("taskExecuteCode", ResultRequestValidators.requireText("taskExecuteCode", taskExecuteCode));
@@ -64,7 +64,7 @@ public final class TaskPointResultPageRequest extends PageRequestSupport {
      */
     public static final class Builder {
         /**
-         * 客户传入的任务执行编码，发送前会 trim 并校验非空。
+         * 调用方传入的任务执行编码，发送前会 trim 并校验非空。
          */
         private String taskExecuteCode;
         /**

@@ -43,8 +43,7 @@ import org.junit.jupiter.api.Test;
 /**
  * 任务模板 API 契约测试。
  *
- * <p>任务模板新增和删除属于业务写入，连接失败时操作可能已经生效或部分完成，因此必须按
- * BUSINESS_WRITE 处理，不允许 SDK 默认重试。查询和分页保持 READ_ONLY。</p>
+ * <p>任务模板新增、启停和删除按 BUSINESS_WRITE 处理，不自动重试；查询和分页按 READ_ONLY 处理。</p>
  */
 class TaskTemplateApiTest {
 

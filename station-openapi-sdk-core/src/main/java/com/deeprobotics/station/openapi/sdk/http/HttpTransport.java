@@ -5,7 +5,7 @@ import java.io.OutputStream;
 /**
  * SDK core 与具体 HTTP 客户端之间的抽象边界。
  *
- * <p>core 只能依赖这个接口，不能依赖具体 HTTP 客户端或客户项目中的任何 HTTP 实现。
+ * <p>core 只能依赖这个接口，不能依赖具体 HTTP 客户端或接入项目中的任何 HTTP 实现。
  * 默认 transport 必须实现这里的契约。</p>
  */
 public interface HttpTransport extends AutoCloseable {
@@ -30,7 +30,7 @@ public interface HttpTransport extends AutoCloseable {
      *
      * <p>二进制成功响应应直接分块写入 {@code outputStream}，不暂存、不重试、不完整缓存文件。
      * 如果远端返回非 2xx，或 2xx 响应不是 {@code application/octet-stream}，transport 需要让 executor
-     * 能从 {@link HttpResponse#body()} 读取有限诊断片段；不要把 JSON、HTML 或未知类型写进客户文件。
+     * 能从 {@link HttpResponse#body()} 读取有限诊断片段；不要把 JSON、HTML 或未知类型写进下载目标文件。
      * 网络异常分类与 {@link #postJson(HttpRequest)} 相同；输出流写入失败应抛出
      * {@link com.deeprobotics.station.openapi.sdk.exception.StationOpenApiDownloadException
      * StationOpenApiDownloadException}，并设置 {@code resultUnknown=true}。</p>
@@ -47,8 +47,8 @@ public interface HttpTransport extends AutoCloseable {
      * 释放 transport 持有的底层资源。
      *
      * <p>通过默认 provider 创建的 transport 由 SDK 客户端关闭；通过
-     * {@code StationOpenApiClients.Builder.transport(...)} 显式注入的 transport 始终由客户关闭，
-     * SDK 客户端不会接管客户共享连接资源的生命周期。</p>
+     * {@code StationOpenApiClients.Builder.transport(...)} 显式注入的 transport 始终由调用方关闭，
+     * SDK 客户端不会接管调用方共享连接资源的生命周期。</p>
      */
     @Override
     void close();

@@ -26,7 +26,7 @@ public final class CameraControlRequest implements OpenApiRequest {
      */
     private final Integer command;
     /**
-     * 指令值：0=停止，1=启动。该字段可选；客户传入时必须在 0..1 范围内。
+     * 指令值：0=停止，1=启动。该字段可选；调用方传入时必须在 0..1 范围内。
      */
     private final Integer value;
     /**
@@ -272,7 +272,7 @@ public final class CameraControlRequest implements OpenApiRequest {
         /**
          * 使用 SDK 已知控制类型设置 {@code ctrlType}。
          *
-         * <p>优先使用枚举入口可以减少客户记忆数字编码的成本，也让调用代码更容易读懂。</p>
+         * <p>优先使用枚举入口可以减少调用方记忆数字编码的成本，也让调用代码更容易读懂。</p>
          *
          * @param ctrlType SDK 已知控制类型；传 {@code null} 时等待 {@link #build()} 后在发送阶段报必填错误
          * @return 当前构造器
@@ -337,7 +337,7 @@ public final class CameraControlRequest implements OpenApiRequest {
          * 设置控制动作值。
          *
          * <p>方向和镜头连续动作通常需要先发送 START，再在合适时机发送 STOP。SDK 不自动补发停止指令，
-         * 由客户业务根据现场交互决定。</p>
+         * 由业务层根据现场交互决定。</p>
          *
          * @param value SDK 已知启停动作；传 {@code null} 时省略字段
          * @return 当前构造器
@@ -361,7 +361,7 @@ public final class CameraControlRequest implements OpenApiRequest {
         /**
          * 设置通道号；不设置时不出现在请求体中。
          *
-         * <p>多通道摄像机或红外/可见光切换场景可能需要该字段。若客户不确定通道号，应先以平台台账配置为准。</p>
+         * <p>多通道摄像机或红外/可见光切换场景可能需要该字段。若调用方不确定通道号，应先以平台台账配置为准。</p>
          *
          * @param channelNum 摄像机通道号，传 {@code null} 时省略字段
          * @return 当前构造器
@@ -375,7 +375,7 @@ public final class CameraControlRequest implements OpenApiRequest {
          * 构建不可变请求对象。
          *
          * <p>字段校验发生在 {@link CameraControlRequest#toMap()}，这样构建对象本身不会触发异常，
-         * 便于客户在自己的参数组装流程中先保存 request，再由 SDK 调用时统一校验。</p>
+         * 便于调用方在自己的参数组装流程中先保存 request，再由 SDK 调用时统一校验。</p>
          *
          * @return 不可变的摄像机控制请求
          */

@@ -12,11 +12,10 @@ import com.deeprobotics.station.openapi.sdk.model.response.task.TaskExecuteInfo;
 /**
  * 任务执行 API 分组。
  *
- * <p>任务下发、暂停、恢复、停止和批量取消都属于 TASK_CONTROL，默认不重试。
+ * <p>任务下发、暂停、恢复、停止和批量取消都属于 TASK_CONTROL，不自动重试。
  * 连接失败或读超时后的实际执行状态可能未知，应通过任务分页、任务状态或 MQ 事件确认。</p>
  *
- * <p>任务分页查询属于 READ_ONLY。控制命令同时提供枚举和 raw code 入口，
- * 既避免调用方记忆数字命令，也可兼容平台新增编码。</p>
+ * <p>任务分页查询属于 READ_ONLY。控制命令提供常量和原始编码入口。</p>
  */
 public interface TaskApi {
 
@@ -35,11 +34,11 @@ public interface TaskApi {
     /**
      * 下发任务模板，并为本次调用指定请求级选项。
      *
-     * <p>这是 TASK_CONTROL 操作，默认不重试；读超时或连接中断时异常会携带
-     * {@code resultUnknown=true}，客户应先查询任务分页或消费 MQ 事件确认是否已经下发。</p>
+     * <p>这是 TASK_CONTROL 操作，不自动重试；读超时或连接中断时异常会携带
+     * {@code resultUnknown=true}，调用方应先查询任务分页或消费 MQ 事件确认是否已经下发。</p>
      *
      * @param request 任务下发请求，不能为 {@code null}
-     * @param options 本次调用的 requestId、超时或重试覆盖配置；传 {@code null} 时使用客户端默认配置
+     * @param options 请求 ID 和超时覆盖配置；{@code null} 使用默认配置，不能开启自动重试
      * @return 平台下发结果文本，含义由执行计划决定；成功响应未携带 data 时为 {@code null}
      */
     String issue(TaskIssueRequest request, RequestOptions options);
@@ -58,10 +57,10 @@ public interface TaskApi {
     /**
      * 对任务执行记录下发控制指令，并为本次调用指定请求级选项。
      *
-     * <p>控制类操作默认不重试，超时后的执行状态需要通过后续查询确认。</p>
+     * <p>控制类操作不自动重试，超时后的执行状态需要通过后续查询确认。</p>
      *
      * @param request 任务控制请求，不能为 {@code null}
-     * @param options 本次调用的 requestId、超时或重试覆盖配置；传 {@code null} 时使用客户端默认配置
+     * @param options 请求 ID 和超时覆盖配置；{@code null} 使用默认配置，不能开启自动重试
      * @return 平台返回的控制结果字符串；成功响应未携带 {@code data} 时为 {@code null}
      */
     String control(TaskControlRequest request, RequestOptions options);
@@ -80,10 +79,10 @@ public interface TaskApi {
     /**
      * 批量取消多个任务执行记录，并为本次调用指定请求级选项。
      *
-     * <p>批量取消同样属于 TASK_CONTROL，默认不重试。</p>
+     * <p>批量取消同样属于 TASK_CONTROL，不自动重试。</p>
      *
      * @param request 批量取消请求，不能为 {@code null}
-     * @param options 本次调用的 requestId、超时或重试覆盖配置；传 {@code null} 时使用客户端默认配置
+     * @param options 请求 ID 和超时覆盖配置；{@code null} 使用默认配置，不能开启自动重试
      */
     void batchCancel(TaskBatchCancelRequest request, RequestOptions options);
 

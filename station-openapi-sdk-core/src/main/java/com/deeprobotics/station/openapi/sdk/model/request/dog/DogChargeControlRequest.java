@@ -98,7 +98,7 @@ public final class DogChargeControlRequest implements OpenApiRequest {
         }
 
         /**
-         * 使用 SDK 已知枚举设置充电控制指令，推荐普通客户使用。
+         * 使用 SDK 已知枚举设置充电控制指令，推荐使用。
          *
          * @param command SDK 已知充电控制指令
          * @return 当前构造器

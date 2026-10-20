@@ -7,8 +7,8 @@ import java.util.LinkedHashMap;
 /**
  * 任务模板下发请求。
  *
- * <p>对应 {@code POST /remoteApi/issue}，成功后返回
- * 新生成的任务执行编码 {@code taskExecuteCode}。</p>
+ * <p>对应 {@code POST /remoteApi/issue}。立即执行可能返回 {@code taskExecuteCode}；
+ * 定时、周期和间隔计划不保证返回单个执行编码，成功响应的 data 也可能为空。</p>
  */
 public final class TaskIssueRequest implements OpenApiRequest {
 
@@ -47,12 +47,11 @@ public final class TaskIssueRequest implements OpenApiRequest {
     /**
      * 构造任务下发请求。
      *
-     * <p>Builder 只暂存客户输入，不在 setter 中抛异常；校验统一放在 {@link #toMap()}，
-     * 这样普通 JSON 调用和下载/重试链路都能共享同一套校验结果。</p>
+     * <p>Builder 收集参数，必填校验在 {@link TaskIssueRequest#toMap()} 中执行。</p>
      */
     public static final class Builder {
         /**
-         * 客户输入的任务模板编码，允许包含首尾空格，最终发送前会 trim。
+         * 调用方输入的任务模板编码，允许包含首尾空格，最终发送前会 trim。
          */
         private String taskCode;
 

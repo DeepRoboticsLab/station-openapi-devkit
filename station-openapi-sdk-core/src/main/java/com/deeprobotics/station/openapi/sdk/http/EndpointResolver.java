@@ -19,12 +19,12 @@ public final class EndpointResolver {
     }
 
     /**
-     * 将客户配置的 endpoint 和接口 path 解析成最终 URI。
+     * 将调用方配置的 endpoint 和接口 path 解析成最终 URI。
      *
      * <p>这里保留 endpoint 的 scheme、userInfo、host、port 和 context path，只把 OpenAPI path
      * 追加到 context path 后面。SDK 不支持在 endpoint 或接口 path 中配置 query 和 fragment。</p>
      *
-     * @param endpoint 客户配置的服务根地址，可包含 context path
+     * @param endpoint 调用方配置的服务根地址，可包含 context path
      * @param path 相对于 endpoint 的平台 API path
      * @return 不含 query 和 fragment 的最终请求 URI
      */

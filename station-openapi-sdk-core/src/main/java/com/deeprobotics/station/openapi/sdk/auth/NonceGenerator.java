@@ -42,7 +42,6 @@ public interface NonceGenerator {
 
         @Override
         public String generate() {
-            // 使用固定长度字母数字 nonce，便于日志定位，同时满足平台防重放要求。
             char[] value = new char[NONCE_LENGTH];
             for (int i = 0; i < value.length; i++) {
                 value[i] = ALPHABET[random.nextInt(ALPHABET.length)];

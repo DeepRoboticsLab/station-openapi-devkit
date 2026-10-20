@@ -296,7 +296,7 @@ class OpenApiExecutorTest {
 
     @Test
     void downloadJsonSuccessResponseThrowsDownloadExceptionAndDoesNotWriteCallerOutput() {
-        // 下载接口协议要求成功响应是二进制流。即使 JSON envelope 标记 success，也不能当成文件写给客户。
+        // 下载接口协议要求成功响应是二进制流。即使 JSON envelope 标记 success，也不能当成文件写给调用方。
         RecordingTransport transport = new RecordingTransport()
                 .enqueueDownloadResponse(200, Map.of("Content-Type", List.of("application/json")),
                         ApiResponse.success("not-a-binary-file"));

@@ -27,7 +27,7 @@ public record DogInfo(
          */
         String dogTypeCode,
         /**
-         * 生产编号或出厂编码，用于客户资产系统做设备追溯。
+         * 生产编号或出厂编码，用于资产系统做设备追溯。
          */
         String productionCode,
         /**

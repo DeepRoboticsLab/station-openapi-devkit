@@ -17,8 +17,8 @@ import java.util.ServiceConfigurationError;
 /**
  * 创建 {@link StationOpenApiClient} 的统一工厂。
  *
- * <p>普通客户只需引入 {@code station-openapi-sdk}，默认 OkHttp transport 会通过 JDK SPI 自动发现。
- * core 只依赖 {@link HttpTransport} 抽象，不依赖 OkHttp；高级客户也可以显式注入其他 transport。</p>
+ * <p>通常只需引入 {@code station-openapi-sdk}，默认 OkHttp transport 会通过 JDK SPI 自动发现。
+ * core 只依赖 {@link HttpTransport} 抽象，不依赖 OkHttp；也可按需显式注入其他 transport。</p>
  */
 public final class StationOpenApiClients {
 
@@ -112,7 +112,7 @@ public final class StationOpenApiClients {
         }
 
         /**
-         * 普通 JSON 调用总超时，默认 15 秒；下载默认不设总时限，需用 {@link RequestOptions} 单独设置。
+         * 普通 JSON 请求每次 HTTP 尝试的总超时，默认 15 秒；下载需用 {@link RequestOptions} 单独设置总时限。
          *
          * @param callTimeout 大于 0 的默认调用总超时
          * @return 当前构造器
@@ -127,7 +127,7 @@ public final class StationOpenApiClients {
          *
          * <p>注入对象由调用方管理，关闭客户端不会关闭该 transport。</p>
          *
-         * @param transport 客户创建并负责关闭的 HTTP transport
+         * @param transport 调用方创建并负责关闭的 HTTP transport
          * @return 当前构造器
          */
         public Builder transport(HttpTransport transport) {

@@ -18,7 +18,7 @@ final class OkHttpTimeouts {
     }
 
     /**
-     * 校验并转换一个已命名的超时字段；所有失败都属于尚未发网的客户参数错误。
+     * 校验并转换一个已命名的超时字段；所有失败都属于尚未发网的调用方参数错误。
      */
     static long toMillis(Duration duration, String fieldName) {
         if (duration == null) {

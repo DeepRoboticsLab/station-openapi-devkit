@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 /**
  * 四足狗查询与控制接口的轻量 Web 入参集合。
  *
- * <p>record 只完成必填项、范围等结构校验并显式构建 SDK 请求；控制类型、命令和值之间的
- * 组合规则仍由 SDK 统一校验，避免 Sample 重复实现协议逻辑。</p>
+ * <p>record 完成必填项和范围校验，再构建 SDK 请求；{@code type=2} 的数值校验由 SDK 执行。
+ * SDK 不校验控制类型与命令码的组合是否受设备支持。</p>
  */
 public final class DogInputs {
 
@@ -70,7 +70,7 @@ public final class DogInputs {
             @Max(value = 5, message = "REMOTE_API_DOG_CONTROL_SPEED_MAX") Integer speed) {
 
         /**
-         * 构建 SDK 请求；类型、命令、值和重复次数之间的组合合法性由 SDK 最终校验。
+         * 构建 SDK 请求；运动控制值的数值和上限由 SDK 校验。
          */
         public DogControlRequest toSdkRequest() {
             return DogControlRequest.builder()

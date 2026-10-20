@@ -248,7 +248,7 @@ public final class DogControlRequest implements OpenApiRequest {
         }
 
         /**
-         * 使用 SDK 已知控制类型设置 {@code type}，推荐普通客户使用。
+         * 使用 SDK 已知控制类型设置 {@code type}，推荐使用。
          *
          * @param type SDK 已知控制类型
          * @return 当前构造器

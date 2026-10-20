@@ -29,10 +29,10 @@ import java.util.List;
  * 访问平台，底层操作意图统一为 {@code READ_ONLY}，因此 SDK 默认可以在连接类失败时按查询接口策略重试。</p>
  *
  * <p>分页请求必须使用 {@code pageNo/pageSize}。平台可能兼容历史页码字段，
- * 但 SDK 公共 API 和生产请求体都不得重新引入该历史字段，避免客户签名源和文档示例产生歧义。</p>
+ * 但 SDK 公共 API 和生产请求体都不得重新引入该历史字段，避免请求签名源和文档示例产生歧义。</p>
  *
  * <p>每个业务方法都提供普通重载和 {@link RequestOptions} 重载。普通重载适合大多数调用；
- * 带 options 的重载用于单次覆盖 requestId、超时或重试策略，方便客户在排查现场问题时串联日志。</p>
+ * 带 options 的重载用于单次覆盖 requestId、超时或重试策略，方便调用方在排查现场问题时串联日志。</p>
  */
 public interface InventoryApi {
 

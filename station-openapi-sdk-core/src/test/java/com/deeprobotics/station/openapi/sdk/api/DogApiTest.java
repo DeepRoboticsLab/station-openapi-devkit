@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>这些测试不连接真实平台、四足狗或摄像头，只通过内存中的 {@link RecordingTransport}
  * 验证 SDK 对外契约：RemoteApi path、操作意图、JSON body 形态、本地校验、重试语义和 {@code dogPos}
- * 二次反序列化。这样可以在没有现场设备的 CI 环境中稳定覆盖客户最容易踩错的调用链。</p>
+ * 二次反序列化。这样可以在没有现场设备的 CI 环境中稳定覆盖调用方最容易踩错的调用链。</p>
  */
 class DogApiTest {
 

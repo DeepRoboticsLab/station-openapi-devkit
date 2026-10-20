@@ -13,7 +13,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageExt;
 
 /**
- * 客户侧远程推送订阅入口。
+ * 远程推送订阅入口。
  *
  * <p>使用 RocketMQ 原生客户端订阅消息，调用方只需注册 {@link RemoteMessageHandler}。</p>
  *
@@ -127,7 +127,7 @@ public final class RemoteMessageSubscriber implements AutoCloseable {
     }
 
     /**
-     * 原生 RocketMQ push consumer 的客户侧构造器。
+     * 原生 RocketMQ push consumer 的构造器。
      */
     public static final class Builder {
 
@@ -154,7 +154,7 @@ public final class RemoteMessageSubscriber implements AutoCloseable {
          *
          * <p>同组实例共同消费一份消息；需要独立接收完整消息流的系统必须使用不同 group。</p>
          *
-         * @param consumerGroup 客户应用使用的消费组，不能为 null 或空白
+         * @param consumerGroup 应用使用的消费组，不能为 null 或空白
          * @return 当前构造器
          */
         public Builder consumerGroup(String consumerGroup) {

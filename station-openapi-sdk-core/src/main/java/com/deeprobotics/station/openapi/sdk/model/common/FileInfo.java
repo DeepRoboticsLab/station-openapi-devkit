@@ -9,7 +9,7 @@ import java.util.Objects;
  * 巡检结果中的文件描述。
  *
  * <p>字段形态与平台巡检结果中的文件对象一致：{@code filePath} 可作为
- * {@code /remoteApi/result/resource} 的下载入参，{@code title/fileType} 用于客户展示和分类。</p>
+ * {@code /remoteApi/result/resource} 的下载入参，{@code title/fileType} 用于调用方展示和分类。</p>
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class FileInfo {
@@ -19,7 +19,7 @@ public final class FileInfo {
      */
     private final String filePath;
     /**
-     * 文件展示名称，通常用于客户页面或报表展示。
+     * 文件展示名称，通常用于应用页面或报表展示。
      */
     private final String title;
     /**

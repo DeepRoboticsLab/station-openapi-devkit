@@ -31,7 +31,7 @@ public final class TaskPageRequest extends PageRequestSupport {
     /**
      * 多状态过滤条件。
      *
-     * <p>SDK 对客户暴露集合或逗号字符串两种设置方式，但 wire 字段必须是英文逗号字符串，
+     * <p>SDK 对调用方暴露集合或逗号字符串两种设置方式，但 wire 字段必须是英文逗号字符串，
      * 因为平台 wire 字段 {@code statusArr} 类型是 {@code String}。平台当前状态码为
      * {@code 1} 已执行、{@code 2} 正在执行、{@code 3} 暂停、{@code 4} 终止、
      * {@code 5} 未执行、{@code 6} 超期。</p>
@@ -217,7 +217,7 @@ public final class TaskPageRequest extends PageRequestSupport {
         /**
          * 使用平台兼容的逗号字符串设置多状态过滤条件。
          *
-         * <p>该入口便于客户从历史配置或页面参数中直接传入 {@code "2,3"}；发送前仍会逐段 trim 并过滤空白。</p>
+         * <p>该入口便于调用方从历史配置或页面参数中直接传入 {@code "2,3"}；发送前仍会逐段 trim 并过滤空白。</p>
          *
          * @param statusArr 英文逗号分隔的任务执行状态编码
          * @return 当前构造器

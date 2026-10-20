@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
  * 地图列表查询请求。
  *
  * <p>对应 {@code POST /remoteApi/mapList}。该接口不分页，常用于
- * 客户在页面初始化或设备切换时加载指定楼层、指定狗可用的地图文件信息。</p>
+ * 调用方在页面初始化或设备切换时加载指定楼层、指定狗可用的地图文件信息。</p>
  *
  * <p>{@code floor} 和 {@code dogCode} 都是可选过滤条件。未传字段不会进入 JSON body，也不会参与签名。</p>
  */

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 设备、地图、摄像机与点位等基础数据接口的轻量 Web 入参集合。
  *
  * <p>record 负责 HTTP 结构校验并显式构建 SDK 请求；分页值保持调用方输入，
- * 由 SDK 统一完成默认值、下限和最大页容量归一化。</p>
+ * 由 SDK 校验页码并归一化每页数量。</p>
  */
 public final class InventoryInputs {
 

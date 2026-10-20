@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
 /**
  * 直接展示 {@code client.inventory()} 分组的台账查询方式。
  *
- * <p>Service 不增加缓存或聚合逻辑，只在摄像机流返回前执行必要的密码字段剔除。</p>
+ * <p>摄像机流通过 {@link CameraStreamView} 返回，剔除密码并过滤不适合展示的流地址。</p>
  */
 @Service
 public class InventorySampleService {

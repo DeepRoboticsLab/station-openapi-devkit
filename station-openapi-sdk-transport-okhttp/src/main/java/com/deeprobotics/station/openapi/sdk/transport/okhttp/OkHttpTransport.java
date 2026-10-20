@@ -254,9 +254,9 @@ public final class OkHttpTransport implements HttpTransport {
     }
 
     /**
-     * 阻止客户应用拦截器在一次 SDK 尝试中多次调用 {@code chain.proceed()}。
+     * 阻止应用拦截器在一次 SDK 尝试中多次调用 {@code chain.proceed()}。
      *
-     * <p>按请求创建并排在客户拦截器之后，在第二次网络请求前拒绝调用。OkHttp 内建后续请求
+     * <p>按请求创建并排在调用方拦截器之后，在第二次网络请求前拒绝调用。OkHttp 内建后续请求
      * 不经过应用拦截器，另由 {@link SingleExchangeRequestBody#isOneShot()} 阻止。</p>
      */
     private static final class SingleProceedInterceptor implements Interceptor {

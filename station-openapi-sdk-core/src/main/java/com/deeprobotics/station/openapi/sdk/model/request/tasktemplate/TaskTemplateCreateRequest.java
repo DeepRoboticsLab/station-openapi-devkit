@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
  * 不立即下发执行；成功后返回平台生成的 {@code taskCode}。</p>
  *
  * <p>注意多值字段的 wire 形态：{@code pointCodes/cycleMonth/cycleWeek} 都是字符串，
- * SDK 对外提供集合 builder 只是为了方便客户组装，最终请求体必须输出英文逗号分隔字符串。</p>
+ * SDK 对外提供集合 builder 只是为了方便调用方组装，最终请求体必须输出英文逗号分隔字符串。</p>
  */
 public final class TaskTemplateCreateRequest implements OpenApiRequest {
 
@@ -28,7 +28,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
     /**
      * 任务模板名称，必填。
      *
-     * <p>用于平台列表、详情展示和客户侧排查。SDK 发送前会 trim 前后空白。</p>
+     * <p>用于平台列表、详情展示和调用方排查。SDK 发送前会 trim 前后空白。</p>
      */
     private final String taskName;
     /**
@@ -38,7 +38,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
     /**
      * 巡检类型，按平台字符串编码透传。
      *
-     * <p>不同客户现场可能存在扩展编码，SDK 不在这里枚举约束。</p>
+     * <p>不同部署环境可能存在扩展编码，SDK 不在这里枚举约束。</p>
      */
     private final String patrolType;
     /**
@@ -176,7 +176,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
         // pointCodes 是必填字段，且 wire 类型是逗号字符串，不是 JSON 数组。
         body.put("pointCodes", TaskTemplateRequestValidators.requireCommaText("pointCodes", pointCodes));
         MapUtils.putIfNotNull(body, "priority", priority);
-        // endAction 使用 SDK 默认值，确保不依赖平台隐式默认。
+        // endAction 始终发送；未设置时使用 SDK 默认值。
         body.put("endAction", TaskTemplateRequestValidators.requireText("endAction", endAction));
         MapUtils.putIfNotNull(body, "deviceLevel", deviceLevel);
         MapUtils.putIfNotNull(body, "isEnable", isEnable);
@@ -236,7 +236,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
         /**
          * 设置任务模板名称，必填。
          *
-         * <p>SDK 会在发送前 trim 前后空白；中间空格按客户输入保留。</p>
+         * <p>SDK 会在发送前 trim 前后空白；中间空格按调用方输入保留。</p>
          *
          * @param taskName 任务模板名称
          * @return 当前构造器
@@ -369,7 +369,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
          *
          * <p>月份编码按平台规则透传，例如 {@code 1,2,12}。SDK 只负责过滤空值和拼接。</p>
          *
-         * @param cycleMonth 周期月份编码集合；{@code null} 或无有效元素时不发送
+         * @param cycleMonth 周期月份编码集合；{@code null} 时不发送，无有效元素时发送空字符串
          * @return 当前构造器
          */
         public Builder cycleMonth(Collection<String> cycleMonth) {
@@ -380,7 +380,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
         /**
          * 设置周期月份逗号字符串。
          *
-         * <p>用于客户已有 wire 字符串的场景，发送时不再拆分校验范围。</p>
+         * <p>用于调用方已有 wire 字符串的场景，发送时不再拆分校验范围。</p>
          *
          * @param cycleMonth 英文逗号分隔的周期月份编码；{@code null} 时不发送
          * @return 当前构造器
@@ -395,7 +395,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
          *
          * <p>星期编码按平台规则透传，SDK 不做自然周含义转换。</p>
          *
-         * @param cycleWeek 周期星期编码集合；{@code null} 或无有效元素时不发送
+         * @param cycleWeek 周期星期编码集合；{@code null} 时不发送，无有效元素时发送空字符串
          * @return 当前构造器
          */
         public Builder cycleWeek(Collection<String> cycleWeek) {
@@ -406,7 +406,7 @@ public final class TaskTemplateCreateRequest implements OpenApiRequest {
         /**
          * 设置周期星期逗号字符串。
          *
-         * <p>用于客户已有 wire 字符串的场景，SDK 不把它转换成 JSON 数组。</p>
+         * <p>用于调用方已有 wire 字符串的场景，SDK 不把它转换成 JSON 数组。</p>
          *
          * @param cycleWeek 英文逗号分隔的周期星期编码；{@code null} 时不发送
          * @return 当前构造器

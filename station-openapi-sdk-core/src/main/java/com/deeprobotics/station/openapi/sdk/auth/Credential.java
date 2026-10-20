@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * SDK 内部凭证对象。
  *
- * <p>客户通过 {@code StationOpenApiConfig} 或 builder 输入凭证，内部再转换成这个不可变对象。
+ * <p>调用方通过 {@code StationOpenApiConfig} 或 builder 输入凭证，内部再转换成这个不可变对象。
  * 对象允许读取 secretKey/accessToken 供鉴权实现使用，但字符串化时必须脱敏。</p>
  */
 public final class Credential {

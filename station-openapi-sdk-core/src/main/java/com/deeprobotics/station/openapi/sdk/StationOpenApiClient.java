@@ -9,13 +9,13 @@ import com.deeprobotics.station.openapi.sdk.api.TaskApi;
 import com.deeprobotics.station.openapi.sdk.api.TaskTemplateApi;
 
 /**
- * 智巡平台 OpenAPI SDK 的客户侧统一入口。
+ * 智巡平台 OpenAPI SDK 的统一入口。
  *
  * <p>这个接口刻意只暴露业务域分组，而不暴露具体 HTTP 客户端、签名实现或平台内部类型。
- * 这样客户项目在升级底层 transport、切换鉴权方式或使用 shaded 包解决依赖冲突时，公共调用形态保持稳定。</p>
+ * 这样接入项目在升级底层 transport、切换鉴权方式或使用 shaded 包解决依赖冲突时，公共调用形态保持稳定。</p>
  *
  * <p>调用方通过 {@link StationOpenApiClients#builder()} 创建实例。默认 transport 由 classpath 中的 SPI
- * provider 自动装配；高级客户也可以显式注入 transport。应用关闭时应调用 {@link #close()} 释放 SDK
+ * provider 自动装配；也可按需显式注入 transport。应用关闭时应调用 {@link #close()} 释放 SDK
  * 创建并持有的底层资源。</p>
  */
 public interface StationOpenApiClient extends AutoCloseable {
@@ -35,14 +35,14 @@ public interface StationOpenApiClient extends AutoCloseable {
     DogApi dog();
 
     /**
-     * 摄像机与云台控制分组。控制类操作默认不重试，避免重复下发物理设备命令。
+     * 摄像机与云台控制分组。控制类操作不自动重试。
      *
      * @return 与当前客户端共享配置和 transport 的摄像机 API
      */
     CameraApi camera();
 
     /**
-     * 任务模板查询、创建和删除分组。模板写操作属于业务写入，默认不重试。
+     * 任务模板查询、创建、启停和删除分组。模板写操作不自动重试。
      *
      * @return 与当前客户端共享配置和 transport 的任务模板 API
      */
@@ -73,7 +73,7 @@ public interface StationOpenApiClient extends AutoCloseable {
      * 释放 SDK 持有的连接池、线程或其他 transport 资源。
      *
      * <p>如果 transport 由 SDK 创建，close 应负责释放；
-     * 如果由客户注入，默认不关闭客户共享对象，避免影响客户应用中其他 HTTP 调用。</p>
+     * 如果由调用方注入，则由调用方负责关闭。</p>
      *
      * <p>重复调用 close 是幂等的，但 close 不与正在执行的业务调用做排空协调。应用关闭时应先停止接收
      * 新任务并等待在途 SDK 调用结束，再关闭客户端；close 返回后不得继续调用业务 API。</p>

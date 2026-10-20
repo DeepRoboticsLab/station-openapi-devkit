@@ -20,20 +20,20 @@ public final class DogPageRequest extends PageRequestSupport {
     /**
      * SDK 统一页码字段，对应请求体中的 {@code pageNo}。
      *
-     * <p>客户不传时由 {@link PageRequestSupport} 归一为第一页；如果传入小于 1 的值，
+     * <p>调用方不传时由 {@link PageRequestSupport} 归一为第一页；如果传入小于 1 的值，
      * SDK 会在本地抛出参数异常，避免无效分页请求发送到平台。</p>
      */
     private final Integer pageNo;
     /**
      * SDK 统一每页数量字段，对应请求体中的 {@code pageSize}。
      *
-     * <p>客户不传、传 0 或负数时归一为 10；超过 100 时归一为 100，防止单次查询过大影响现场系统。</p>
+     * <p>调用方不传、传 0 或负数时归一为 10；超过 100 时归一为 100，防止单次查询过大影响现场系统。</p>
      */
     private final Integer pageSize;
     /**
      * 四足狗名称过滤条件，对应平台 wire 字段 {@code dogName}。
      *
-     * <p>该字段可选，{@code null} 不进入请求体；空字符串会按客户显式输入保留在 body 中。</p>
+     * <p>该字段可选，{@code null} 不进入请求体；空字符串会按调用方显式输入保留在 body 中。</p>
      */
     private final String dogName;
     /**

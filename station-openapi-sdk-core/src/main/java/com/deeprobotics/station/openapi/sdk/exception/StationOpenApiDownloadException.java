@@ -15,7 +15,7 @@ public class StationOpenApiDownloadException extends StationOpenApiException {
      * @param path 下载接口 path
      * @param requestId 请求链路 ID
      * @param operation SDK 操作标识
-     * @param resultUnknown 客户输出流是否可能已经收到部分字节
+     * @param resultUnknown 调用方的输出流是否可能已经收到部分字节
      */
     public StationOpenApiDownloadException(String message, String path, String requestId, String operation,
             boolean resultUnknown) {
@@ -29,7 +29,7 @@ public class StationOpenApiDownloadException extends StationOpenApiException {
      * @param path 下载接口 path
      * @param requestId 请求链路 ID
      * @param operation SDK 操作标识
-     * @param resultUnknown 客户输出流是否可能已经收到部分字节
+     * @param resultUnknown 调用方的输出流是否可能已经收到部分字节
      * @param cause 原始下载或写入失败原因
      */
     public StationOpenApiDownloadException(String message, String path, String requestId, String operation,

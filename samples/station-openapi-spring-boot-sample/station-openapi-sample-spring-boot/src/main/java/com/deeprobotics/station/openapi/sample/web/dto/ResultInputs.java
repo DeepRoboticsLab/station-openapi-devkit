@@ -10,8 +10,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * 巡检结果查询与资源下载接口的轻量 Web 入参集合。
  *
- * <p>record 负责基本 HTTP 校验并显式构建 SDK 请求；下载文件路径和资源类型仍由 SDK
- * 执行最终安全校验，Sample 不绕过 SDK 的协议边界。</p>
+ * <p>record 校验必填字段和资源类型，再构建 SDK 请求；资源路径应使用平台返回值。</p>
  */
 public final class ResultInputs {
 
@@ -39,7 +38,7 @@ public final class ResultInputs {
             @Max(value = 2, message = "REMOTE_API_RESOURCE_TYPE_RANGE") Integer type) {
 
         /**
-         * 构建 SDK 下载请求；文件路径与资源类型原样交给 SDK 做最终安全校验。
+         * 构建 SDK 下载请求；SDK 校验路径非空及资源类型为 1 或 2。
          */
         public ResourceDownloadRequest toSdkRequest() {
             return ResourceDownloadRequest.builder()

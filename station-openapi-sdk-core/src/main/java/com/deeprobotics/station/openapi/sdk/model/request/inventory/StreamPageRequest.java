@@ -19,7 +19,7 @@ public final class StreamPageRequest extends PageRequestSupport {
     /**
      * 摄像机流名称过滤条件，对应平台 wire 字段 {@code name}。
      *
-     * <p>字段可选，适合客户在视频列表或设备绑定页面按名称检索。</p>
+     * <p>字段可选，适合调用方在视频列表或设备绑定页面按名称检索。</p>
      */
     private final String name;
     /**

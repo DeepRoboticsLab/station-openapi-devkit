@@ -291,7 +291,7 @@ public final class OpenApiExecutor {
     }
 
     private static boolean isJsonContentType(HttpResponse response) {
-        // application/problem+json 等结构化 JSON 错误也必须进入 R<?> 解析，不能落成客户文件。
+        // application/problem+json 等结构化 JSON 错误也必须进入 R<?> 解析，不能落成下载目标文件。
         for (Map.Entry<String, List<String>> entry : response.headers().entrySet()) {
             if (!"Content-Type".equalsIgnoreCase(entry.getKey())) {
                 continue;

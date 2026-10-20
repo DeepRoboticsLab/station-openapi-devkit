@@ -4,7 +4,7 @@ package com.deeprobotics.station.openapi.sdk.exception;
  * HTTP transport 层异常。
  *
  * <p>典型原因包括 DNS、连接建立失败、TLS 握手失败、连接被重置等。
- * 对控制/写入操作，连接中断同样可能出现结果未知，需要通过 {@code resultUnknown} 提醒客户确认状态。</p>
+ * 对控制/写入操作，连接中断同样可能出现结果未知，需要通过 {@code resultUnknown} 提醒调用方确认状态。</p>
  *
  * <p>下载中途失败时，{@code resultUnknown=true} 表示输出可能不完整，应丢弃后重新下载。</p>
  */

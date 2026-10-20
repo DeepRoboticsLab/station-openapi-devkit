@@ -1,7 +1,7 @@
 package com.deeprobotics.station.openapi.sdk.rocketmq;
 
 /**
- * 客户处理远程推送消息的函数式接口。
+ * 处理远程推送消息的函数式接口。
  *
  * <p>正常返回确认消费，抛出异常请求重投。原生订阅器会并发调用，处理器须线程安全并按业务键幂等。</p>
  *

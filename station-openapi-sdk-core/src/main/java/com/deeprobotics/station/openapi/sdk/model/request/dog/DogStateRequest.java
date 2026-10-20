@@ -15,7 +15,7 @@ public final class DogStateRequest implements OpenApiRequest {
     /**
      * 四足狗编码，对应平台请求中的同名字段 {@code dogCode}。
      *
-     * <p>该字段参与签名和 JSON body 构造。客户传入首尾空格时会在 {@link #toMap()} 中被 trim，
+     * <p>该字段参与签名和 JSON body 构造。调用方传入首尾空格时会在 {@link #toMap()} 中被 trim，
      * 既减少现场排查成本，也避免“看起来相同但签名源不同”的问题。</p>
      */
     private final String dogCode;

@@ -88,7 +88,7 @@ public final class DefaultStationOpenApiClient implements StationOpenApiClient {
     public void close() {
         /*
          * SDK-owned transport 只关闭一次，允许 Spring 销毁回调、try-with-resources 和显式 close 重复触发。
-         * customer-owned transport 不进入 CAS，也不会被 SDK 标记或关闭；它可能仍被客户其他组件复用。
+         * 调用方注入的 transport 不进入 CAS，也不会被 SDK 标记或关闭；它可能仍被应用中的其他组件复用。
          */
         if (transportOwnedBySdk && closed.compareAndSet(false, true)) {
             transport.close();

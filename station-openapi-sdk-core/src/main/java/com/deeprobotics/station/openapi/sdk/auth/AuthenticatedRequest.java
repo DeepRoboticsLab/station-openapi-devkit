@@ -9,7 +9,7 @@ import java.util.Map;
  * 鉴权后的请求快照。
  *
  * <p>签名模式会把 appKey/timestamp/nonce/sign 放入 body；Token 模式会把
- * {@code X-Access-Token} 放入 headers。对象构造时会防御性拷贝，避免调用方后续修改影响已准备发送的请求。</p>
+ * {@code X-Access-Token} 放入 headers。构造和读取时复制 Map 及请求体的顶层集合容器，不深拷贝嵌套值。</p>
  */
 public final class AuthenticatedRequest {
 
@@ -27,7 +27,7 @@ public final class AuthenticatedRequest {
     private final LinkedHashMap<String, String> headers;
 
     /**
-     * 创建鉴权后请求快照，并对 body 中的集合和 header 做防御性复制。
+     * 创建鉴权后请求快照，复制 body、顶层集合容器和 header，并省略值为 null 的字段。
      *
      * @param body 已补充鉴权字段的 body；null 按空 body 处理
      * @param headers 鉴权 header；null 按空 header 处理
@@ -38,12 +38,11 @@ public final class AuthenticatedRequest {
     }
 
     /**
-     * 返回可序列化 body 的副本。调用方修改返回值不会改变内部快照。
+     * 返回请求体 Map 及顶层集合容器的副本，嵌套值仍共享。
      *
      * @return 已鉴权请求体的防御性副本
      */
     public LinkedHashMap<String, Object> body() {
-        // 返回副本，避免调用者修改已鉴权 body 后造成签名和最终 JSON 不一致。
         return MapUtils.copyWithoutNulls(body);
     }
 
@@ -53,7 +52,6 @@ public final class AuthenticatedRequest {
      * @return 鉴权请求头的防御性副本
      */
     public LinkedHashMap<String, String> headers() {
-        // header 可能包含凭证，返回副本只保证不可变性；输出日志仍必须走 Redactor。
         return new LinkedHashMap<>(headers);
     }
 

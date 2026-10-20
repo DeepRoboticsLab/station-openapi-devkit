@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TaskExecuteInfo(
-        /** 变电站/站点名称，用于客户系统展示任务所属站点。 */
+        /** 变电站/站点名称，用于业务系统展示任务所属站点。 */
         String stationName,
         /** 任务模板编码，同一模板多次下发时该值相同。 */
         String taskCode,
@@ -71,7 +71,7 @@ public record TaskExecuteInfo(
      * 创建任务执行记录，并把巡检路线归一为保序不可变快照。
      *
      * <p>平台未返回 {@code taskRoad} 时使用空 Map；非空 Map 会被复制，避免响应对象受 Jackson
-     * 临时集合或客户后续修改影响。</p>
+     * 临时集合或调用方后续修改影响。</p>
      *
      * @param stationName 变电站或站点名称
      * @param taskCode 任务模板编码

@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
  * 任务执行 API 契约测试。
  *
  * <p>任务下发、暂停、恢复、终止和批量取消都有业务副作用，必须标记为 TASK_CONTROL，
- * 默认不重试；任务执行分页只是查询，按 READ_ONLY 处理。</p>
+ * 不自动重试；任务执行分页只是查询，按 READ_ONLY 处理。</p>
  */
 class TaskApiTest {
 

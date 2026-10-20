@@ -9,19 +9,19 @@ import okhttp3.OkHttpClient;
 /**
  * OkHttp transport 工厂和 SDK 默认客户端配置入口。
  *
- * <p>客户如果没有特殊代理、证书、连接池或监控拦截器需求，直接使用 {@link #create()} 即可。
+ * <p>调用方如果没有特殊代理、证书、连接池或监控拦截器需求，直接使用 {@link #create()} 即可。
  * 需要接入企业统一网络栈时，可以自行构造 OkHttpClient 后调用 {@link #create(OkHttpClient)}；
  * SDK 会派生共享底层资源的 client，并强制保留禁止透明重试和重定向的安全策略。</p>
  */
 public final class OkHttpTransportFactory {
 
-    /** 建连超时默认 3 秒，快速暴露地址、DNS 或网络不可达问题。 */
+    /** 建连超时默认 3 秒，不包含 DNS 解析等待时间。 */
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
-    /** 普通请求读超时默认 10 秒；单次请求可通过 RequestOptions 覆盖。 */
+    /** 普通请求和下载的读取超时默认 10 秒；单次请求可通过 RequestOptions 覆盖。 */
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(10);
     /** 普通 JSON 调用的默认总时限；transport 为下载单独关闭总时限。 */
     private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofSeconds(15);
-    /** 默认保留少量空闲连接，兼顾 SDK 连续调用性能和客户进程资源占用。 */
+    /** 默认保留少量空闲连接，兼顾 SDK 连续调用性能和应用进程资源占用。 */
     private static final int DEFAULT_MAX_IDLE_CONNECTIONS = 10;
     /** 空闲连接最多在连接池保留 5 分钟，超过时间由 OkHttp 回收。 */
     private static final Duration DEFAULT_KEEP_ALIVE = Duration.ofMinutes(5);
@@ -32,7 +32,7 @@ public final class OkHttpTransportFactory {
     /**
      * 创建 SDK 持有生命周期的默认 transport。
      *
-     * <p>返回的 transport 关闭时会释放本工厂创建的 OkHttpClient 资源，适合最常见的客户接入方式。</p>
+     * <p>返回的 transport 关闭时会释放本工厂创建的 OkHttpClient 资源，适合常规接入场景。</p>
      *
      * @return 使用 SDK 默认建连超时和安全策略的 transport
      */
@@ -51,14 +51,14 @@ public final class OkHttpTransportFactory {
     }
 
     /**
-     * 用客户传入的 OkHttpClient 创建 transport。
+     * 用调用方传入的 OkHttpClient 创建 transport。
      *
-     * <p>客户传入 client 时，SDK 默认不接管关闭责任。这样可以支持多个 SDK 或客户业务代码共用同一个
+     * <p>调用方传入 client 时，SDK 默认不接管关闭责任。这样可以支持多个 SDK 或业务代码共用同一个
      * OkHttpClient、连接池、代理配置和 TLS 配置。transport 会从该对象派生共享底层资源的安全 client，
-     * 强制关闭透明重试和重定向，但不会关闭客户对象。</p>
+     * 强制关闭透明重试和重定向，但不会关闭传入的对象。</p>
      *
-     * @param client 客户持有生命周期的 OkHttpClient
-     * @return 共享客户网络资源、但应用 SDK 安全约束的 transport
+     * @param client 由调用方管理生命周期的 OkHttpClient
+     * @return 共享调用方的网络资源、但应用 SDK 安全约束的 transport
      */
     public static OkHttpTransport create(OkHttpClient client) {
         return new OkHttpTransport(hardenCustomerClient(client), false);
@@ -71,7 +71,7 @@ public final class OkHttpTransportFactory {
      * 否则设备控制、任务下发等有副作用请求可能被底层透明重发；重定向会让带鉴权信息的 POST
      * 跳到非预期地址，默认也不允许。</p>
      *
-     * <p>本方法不配置 trust-all TLS。客户如使用私有 CA，应在传入的 OkHttpClient 中显式配置企业
+     * <p>本方法不配置 trust-all TLS。调用方如使用私有 CA，应在传入的 OkHttpClient 中显式配置企业
      * truststore，而不是让 SDK 默认放宽证书校验。</p>
      *
      * @return 由调用方持有生命周期的默认 OkHttpClient
@@ -105,7 +105,7 @@ public final class OkHttpTransportFactory {
     }
 
     /**
-     * 从客户 client 派生 SDK 安全配置，同时复用其底层网络资源和观测能力。
+     * 从调用方提供的 client 派生 SDK 安全配置，同时复用其底层网络资源和观测能力。
      */
     private static OkHttpClient hardenCustomerClient(OkHttpClient client) {
         if (client == null) {

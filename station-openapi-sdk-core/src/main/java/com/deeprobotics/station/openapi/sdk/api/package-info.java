@@ -1,12 +1,12 @@
 /**
- * 客户可直接调用的业务域 API。
+ * 对外提供的业务域 API。
  *
  * <p>接口只暴露 SDK 自己的请求/响应模型和 {@code RequestOptions}。普通重载和带请求级选项的重载
  * 执行相同的请求流程。</p>
  *
  * <p>查询接口按 READ_ONLY 处理；文件下载按 FILE_DOWNLOAD 处理；模板写入、任务控制和设备控制
- * 分别使用 BUSINESS_WRITE、TASK_CONTROL、DEVICE_CONTROL。后三类操作默认不自动重试，
- * 网络结果不确定时异常会提示客户先查询状态或等待事件确认。</p>
+ * 分别使用 BUSINESS_WRITE、TASK_CONTROL、DEVICE_CONTROL。后三类操作不自动重试，
+ * 网络结果不确定时异常会提示调用方先查询状态或等待事件确认。</p>
  *
  * <p>下载同样不重试，直接写入调用方输出流；中途失败时应丢弃不完整输出后重新下载。</p>
  *

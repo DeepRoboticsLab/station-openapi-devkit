@@ -21,7 +21,7 @@ public class SampleLocaleResolver implements LocaleResolver {
             return queryLocale;
         }
 
-        // Header 可能包含多个候选语言，按客户端给出的顺序选择首个支持项。
+        // 按 Servlet 容器解析的 Accept-Language 优先级选择首个支持项。
         Enumeration<Locale> locales = request.getLocales();
         while (locales.hasMoreElements()) {
             Locale locale = locales.nextElement();

@@ -162,7 +162,7 @@ public final class RemoteMessageRouter {
         }
 
         /**
-         * 注册巡检结果 handler；客户实现必须按业务键幂等。
+         * 注册巡检结果 handler；处理器必须按业务键实现幂等。
          *
          * @param handler 巡检结果处理器，允许为 {@code null}
          * @return 当前构造器

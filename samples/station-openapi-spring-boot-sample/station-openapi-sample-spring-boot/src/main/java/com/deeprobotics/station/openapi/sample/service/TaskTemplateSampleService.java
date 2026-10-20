@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 /**
  * 直接展示 {@code client.taskTemplate()} 分组的模板增删查及启停调用。
  *
- * <p>Sample 不增加 Repository、事务或模板编排，客户可把这些调用嵌入自己的业务 Service。</p>
+ * <p>Sample 不增加 Repository、事务或模板编排，调用方可把这些调用嵌入自己的业务 Service。</p>
  */
 @Service
 public class TaskTemplateSampleService {

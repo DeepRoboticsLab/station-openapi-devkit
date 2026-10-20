@@ -24,7 +24,7 @@ public final class RemoteMessageTags {
     public static final String TAG_TASK_STATUS = "uploadHttpRemoteTaskStatus";
 
     /**
-     * 巡检结果推送 tag。同一个点位结果可能先后推送原图、原图+效果图，客户应按幂等键合并。
+     * 巡检结果推送 tag。同一个点位结果可能先后推送原图、原图+效果图，调用方应按幂等键合并。
      */
     public static final String TAG_TASK_RESULT = "uploadHttpRemoteResult";
 
@@ -60,8 +60,6 @@ public final class RemoteMessageTags {
 
     /**
      * 返回当前 SDK 正常路由的四个 tag。
-     *
-     * <p>返回 {@link LinkedHashSet} 是为了让调试输出顺序稳定；调用方不能修改该集合。</p>
      *
      * @return 按稳定顺序排列的不可变 tag 集合
      */

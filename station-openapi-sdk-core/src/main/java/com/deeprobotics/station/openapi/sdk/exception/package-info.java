@@ -1,5 +1,5 @@
 /**
- * SDK 对客户统一暴露的异常体系与脱敏工具。
+ * SDK 对调用方统一暴露的异常体系与脱敏工具。
  *
  * <p>异常上下文统一包含可获得的 requestId、path、operation、HTTP/业务 code 和 resultUnknown。
  * 对写入或控制操作，{@code resultUnknown=true} 表示可能已经生效但客户端未收到确认，不能理解为明确失败；

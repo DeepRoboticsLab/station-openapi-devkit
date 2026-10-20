@@ -137,7 +137,7 @@ public class SampleExceptionHandler {
         detail.setProperty("operation", exception.operation());
         detail.setProperty("path", exception.path());
         detail.setProperty("code", exception.code() == null ? messageKey : exception.code());
-        // resultUnknown 对写入/控制操作尤为重要，客户应先查状态或等待 MQ，再决定是否重试。
+        // resultUnknown 对写入/控制操作尤为重要，调用方应先查状态或等待 MQ，再决定是否重试。
         detail.setProperty("resultUnknown", exception.resultUnknown());
         return detail;
     }

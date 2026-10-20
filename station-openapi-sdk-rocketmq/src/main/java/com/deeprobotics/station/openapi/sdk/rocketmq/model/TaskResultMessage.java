@@ -7,7 +7,7 @@ import java.util.List;
  * 巡检结果推送消息。
  *
  * <p>对应 {@code uploadHttpRemoteResult} tag。平台在识别流程中可能对同一个
- * {@code taskExecuteCode + devicePointCode} 先推原图结果，再推原图+效果图结果；客户侧应使用
+ * {@code taskExecuteCode + devicePointCode} 先推原图结果，再推原图+效果图结果；消息处理器应使用
  * {@link #idempotentKey()} 做 upsert 或文件列表合并，而不是简单插入两条独立记录。</p>
  *
  * <p>{@code alarmLevel} 从平台 v1.3.2 起提供，SDK 将整数或字符串统一保留为可空字符串。
@@ -19,7 +19,7 @@ public record TaskResultMessage(
         String dogCode,
         /** 执行巡检的四足狗名称。 */
         String dogName,
-        /** 任务名称，便于客户在 MQ 消息中直接展示上下文。 */
+        /** 任务名称，便于调用方在 MQ 消息中直接展示上下文。 */
         String taskName,
         /** 任务模板编码。 */
         String taskCode,
@@ -129,7 +129,7 @@ public record TaskResultMessage(
     /**
      * 巡检结果推荐幂等键。
      *
-     * <p>同一点位结果可能因为效果图生成而二次推送，客户侧可用该键做 upsert，并对 fileList 做并集。</p>
+     * <p>同一点位结果可能因为效果图生成而二次推送，消息处理器可用该键做 upsert，并对 fileList 做并集。</p>
      *
      * @return {@code taskExecuteCode + ":" + devicePointCode}
      */

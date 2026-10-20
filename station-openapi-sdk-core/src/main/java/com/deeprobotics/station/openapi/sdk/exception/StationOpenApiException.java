@@ -3,13 +3,13 @@ package com.deeprobotics.station.openapi.sdk.exception;
 /**
  * SDK 异常体系基类。
  *
- * <p>所有对客户抛出的异常都应携带尽可能多的排障上下文：requestId、path、operation、code
- * 和 resultUnknown。上下文会先脱敏再进入异常 message，避免客户把日志发给支持团队时泄露凭证。</p>
+ * <p>所有对调用方抛出的异常都应携带尽可能多的排障上下文：requestId、path、operation、code
+ * 和 resultUnknown。上下文会先脱敏再进入异常 message，避免日志泄露凭证。</p>
  */
 public class StationOpenApiException extends RuntimeException {
 
     /**
-     * 请求链路 ID，已脱敏。用于客户和平台支持人员串联日志。
+     * 请求链路 ID，已脱敏。用于关联调用方与平台日志。
      */
     private final String requestId;
     /**
@@ -104,7 +104,7 @@ public class StationOpenApiException extends RuntimeException {
     }
 
     /**
-     * SDK 业务操作标识，例如 {@code task.issue}，用于客户排查“哪个 SDK 方法失败”。
+     * SDK 业务操作标识，例如 {@code task.issue}，用于调用方排查“哪个 SDK 方法失败”。
      *
      * @return 已脱敏的 SDK 操作标识，未知时为 {@code null}
      */
@@ -124,7 +124,7 @@ public class StationOpenApiException extends RuntimeException {
     /**
      * 本次调用是否存在无法确认的执行结果或不完整输出。
      *
-     * <p>执行器处理写操作、任务控制和设备控制的超时/连接中断时会设为 {@code true}。客户应先查询状态
+     * <p>执行器处理写操作、任务控制和设备控制的超时/连接中断时会设为 {@code true}。调用方应先查询状态
      * 或等待 MQ 事件，不应直接重试。</p>
      *
      * <p>下载的连接、超时或输出失败也会设为 {@code true}，表示可能已交付部分字节。

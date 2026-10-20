@@ -18,7 +18,7 @@ import java.util.Optional;
  * 四足狗状态、告警、坐标和控制 API 分组。
  *
  * <p>状态、告警和坐标查询按 READ_ONLY 操作处理；充电、运动控制和选点下发按 DEVICE_CONTROL
- * 操作处理且默认不重试。</p>
+ * 操作处理且不自动重试。</p>
  *
  * <p>{@code dogPos} 的平台响应将坐标放在字符串形式的 {@code data} 中，SDK 将其转换为
  * 结构化坐标模型或空结果，不向调用方暴露原始 JSON 字符串。</p>
@@ -29,7 +29,7 @@ public interface DogApi {
      * 查询四足狗状态分组。
      *
      * <p>对应 {@code POST /remoteApi/getDogStateData}。平台返回电池、定位、
-     * 基础状态等稳定对外分组，SDK 不翻译 {@code groupName/status/value} 等字段，便于客户按现场语言包
+     * 基础状态等稳定对外分组，SDK 不翻译 {@code groupName/status/value} 等字段，便于调用方按现场语言包
      * 或自己的展示逻辑处理。</p>
      *
      * @param request 状态查询条件，必须包含非空 {@code dogCode}
@@ -51,8 +51,8 @@ public interface DogApi {
     /**
      * 下发充电返航或取消返航指令。
      *
-     * <p>对应 {@code POST /remoteApi/chargeCtrl}。这是设备控制接口，SDK 默认不重试；
-     * 如果调用超时或连接状态不确定，异常会标记结果未知，客户应查询狗状态或任务状态确认现场结果。</p>
+     * <p>对应 {@code POST /remoteApi/chargeCtrl}。这是设备控制接口，SDK 不自动重试；
+     * 如果调用超时或连接状态不确定，异常会标记结果未知，调用方应查询狗状态或任务状态确认现场结果。</p>
      *
      * @param request 充电控制请求，必须包含非空 {@code dogCode} 和 {@code command}
      */
@@ -62,14 +62,14 @@ public interface DogApi {
      * 下发充电返航或取消返航指令，并为本次调用指定请求级选项。
      *
      * @param request 充电控制请求，必须包含非空 {@code dogCode} 和 {@code command}
-     * @param options 本次调用的 requestId、超时或重试覆盖配置；控制类操作默认不重试
+     * @param options 请求 ID 和超时覆盖配置；{@code null} 使用默认配置，不能开启自动重试
      */
     void chargeControl(DogChargeControlRequest request, RequestOptions options);
 
     /**
      * 下发四足狗模式切换或运动控制指令。
      *
-     * <p>对应 {@code POST /remoteApi/controlDog}。SDK 提供枚举入口避免客户记忆数字编码，
+     * <p>对应 {@code POST /remoteApi/controlDog}。SDK 提供枚举入口避免调用方记忆数字编码，
      * 同时保留 raw code setter 以兼容平台新增指令。{@code type=2} 的运动控制会在本地校验
      * {@code value} 是数值且不大于 {@code 0.6}。</p>
      *
@@ -81,7 +81,7 @@ public interface DogApi {
      * 下发四足狗模式切换或运动控制指令，并为本次调用指定请求级选项。
      *
      * @param request 控制请求，必须包含非空 {@code dogCode/type/command/value}
-     * @param options 本次调用的 requestId、超时或重试覆盖配置；控制类操作默认不重试
+     * @param options 请求 ID 和超时覆盖配置；{@code null} 使用默认配置，不能开启自动重试
      */
     void control(DogControlRequest request, RequestOptions options);
 
@@ -99,7 +99,7 @@ public interface DogApi {
      * 向四足狗下发路网选点坐标，并为本次调用指定请求级选项。
      *
      * @param request 选点下发请求，必须包含非空 {@code dogCode/edgeCode/x/y}
-     * @param options 本次调用的 requestId、超时或重试覆盖配置；控制类操作默认不重试
+     * @param options 请求 ID 和超时覆盖配置；{@code null} 使用默认配置，不能开启自动重试
      */
     void setPosition(DogPositionSetRequest request, RequestOptions options);
 

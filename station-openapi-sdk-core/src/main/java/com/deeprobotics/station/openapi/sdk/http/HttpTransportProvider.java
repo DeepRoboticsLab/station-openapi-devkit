@@ -3,7 +3,7 @@ package com.deeprobotics.station.openapi.sdk.http;
 /**
  * 默认 HTTP transport 的 JDK SPI 扩展点。
  *
- * <p>普通客户引入的 transport 模块通过 {@code META-INF/services} 注册实现。provider 只能接收
+ * <p>transport 模块通过 {@code META-INF/services} 注册实现。provider 只能接收
  * {@link HttpTransportSettings} 中的非敏感网络配置，不能接触 accessToken 或 secretKey。</p>
  */
 public interface HttpTransportProvider {

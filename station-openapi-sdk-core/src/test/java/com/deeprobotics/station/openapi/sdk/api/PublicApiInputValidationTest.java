@@ -17,10 +17,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /**
- * 客户业务 API 的公共 null 边界测试。
+ * 公共业务 API 的 null 参数边界测试。
  *
- * <p>所有业务请求和输出流的参数错误都必须在进入 transport 前转换为统一 SDK 客户异常，
- * 避免客户为同一种本地输入错误额外捕获 JDK NPE。</p>
+ * <p>所有业务请求和输出流的参数错误都必须在进入 transport 前转换为统一的 SDK 异常，
+ * 避免调用方为同一种本地输入错误额外捕获 JDK NPE。</p>
  */
 class PublicApiInputValidationTest {
 

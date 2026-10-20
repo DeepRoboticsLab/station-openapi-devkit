@@ -3,7 +3,7 @@ package com.deeprobotics.station.openapi.sdk.rocketmq;
 /**
  * RocketMQ 远程推送模块的运行时异常。
  *
- * <p>公共 API 不声明 RocketMQ 原生 checked exception，避免客户业务代码被迫依赖底层 client
+ * <p>公共 API 不声明 RocketMQ 原生 checked exception，避免业务代码被迫依赖底层 client
  * 的异常类型。配置校验和订阅器启动失败会抛出该异常。消息解析或 handler 执行失败由
  * {@link RemoteMessageRouter} 转换为 {@link RemoteMessageConsumeResult#RECONSUME_LATER}，不会继续抛给调用方。</p>
  */

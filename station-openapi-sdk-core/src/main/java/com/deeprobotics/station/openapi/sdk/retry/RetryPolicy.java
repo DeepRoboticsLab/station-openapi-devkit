@@ -42,7 +42,7 @@ public final class RetryPolicy {
     }
 
     /**
-     * 把客户请求级开关与接口安全边界合并为内部策略。
+     * 把调用方设置的请求级开关与接口安全边界合并为内部策略。
      *
      * <p>{@code DEFAULT} 只恢复接口自身的默认次数，不会开启下载、写入或控制操作的重试。</p>
      *
@@ -78,7 +78,7 @@ public final class RetryPolicy {
     }
 
     private static boolean isRetriable(RuntimeException failure) {
-        // HTTP 4xx/5xx 和平台业务失败不在这里重试，因为平台已经给出明确结果。
+        // HTTP 状态错误和平台业务失败不属于连接或超时异常，不触发自动重试。
         return failure instanceof HttpTimeoutException || failure instanceof HttpConnectionException;
     }
 }

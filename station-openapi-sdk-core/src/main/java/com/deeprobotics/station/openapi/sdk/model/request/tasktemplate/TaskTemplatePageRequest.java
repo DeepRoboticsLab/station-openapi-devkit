@@ -164,7 +164,7 @@ public final class TaskTemplatePageRequest extends PageRequestSupport {
         /**
          * 设置每页数量。
          *
-         * <p>不传或小于等于 0 时归一为 10；大于 100 时归一为 100，避免客户一次拉取过大数据量。</p>
+         * <p>不传或小于等于 0 时归一为 10；大于 100 时归一为 100，避免调用方一次拉取过大数据量。</p>
          *
          * @param pageSize 每页数量
          * @return 当前构造器

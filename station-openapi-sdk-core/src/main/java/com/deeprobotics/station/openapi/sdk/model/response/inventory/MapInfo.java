@@ -19,7 +19,7 @@ public record MapInfo(
          */
         String dogCode,
         /**
-         * 地图文件名，可作为后续地图文件下载或客户侧展示的业务标识。
+         * 地图文件名，可作为后续地图文件下载或调用方展示的业务标识。
          */
         String mapFileName,
         /**

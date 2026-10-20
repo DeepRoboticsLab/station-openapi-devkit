@@ -42,10 +42,7 @@ public final class TaskControlRequest implements OpenApiRequest {
 
     @Override
     public LinkedHashMap<String, Object> toMap() {
-        /*
-         * 控制接口属于 TASK_CONTROL，执行器默认不重试。这里仍然只负责构造确定性的 wire body：
-         * 先写 taskExecuteCode，再写 command，确保签名源、测试断言和问题排查看到同样的字段顺序。
-         */
+        // 按固定顺序写入 taskExecuteCode 和 command。
         LinkedHashMap<String, Object> body = MapUtils.newBody();
         body.put("taskExecuteCode", TaskRequestValidators.requireText("taskExecuteCode", taskExecuteCode));
         body.put("command", TaskRequestValidators.requireText("command", command));
@@ -57,7 +54,7 @@ public final class TaskControlRequest implements OpenApiRequest {
      */
     public static final class Builder {
         /**
-         * 客户输入的任务执行编码，最终发送前会 trim 并校验非空。
+         * 调用方输入的任务执行编码，最终发送前会 trim 并校验非空。
          */
         private String taskExecuteCode;
         /**

@@ -38,10 +38,7 @@ public final class TaskBatchCancelRequest implements OpenApiRequest {
 
     @Override
     public LinkedHashMap<String, Object> toMap() {
-        /*
-         * 本地过滤 null、空白元素并保留为 List，保证 Jackson 序列化后仍是 JSON array。
-         * 批量取消是 TASK_CONTROL，执行器不会默认重试，因此不能在这里做任何拆分或循环重发。
-         */
+        // 过滤 null、空白元素后保留为 List，序列化为 JSON 数组。
         LinkedHashMap<String, Object> body = MapUtils.newBody();
         body.put("taskExecuteCodeList", TaskRequestValidators.requireStringList("taskExecuteCodeList",
                 taskExecuteCodeList));
@@ -53,7 +50,7 @@ public final class TaskBatchCancelRequest implements OpenApiRequest {
      */
     public static final class Builder {
         /**
-         * 客户传入的任务执行编码集合副本。
+         * 调用方传入的任务执行编码集合副本。
          *
          * <p>setter 会复制集合，避免调用方在请求对象创建后继续修改原集合，导致签名源和实际请求不一致。</p>
          */

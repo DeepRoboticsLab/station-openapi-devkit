@@ -40,7 +40,7 @@ final class CameraRequestValidators {
     /**
      * 校验整数范围。
      *
-     * <p>{@code value} 这类可选字段允许为 null；只有客户显式传值时才检查范围。</p>
+     * <p>{@code value} 这类可选字段允许为 null；只有调用方显式传值时才检查范围。</p>
      */
     static void requireRange(String fieldName, Integer value, int min, int max) {
         if (value != null && (value < min || value > max)) {

@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
  * 检修区域分页查询请求。
  *
  * <p>对应 {@code POST /remoteApi/maintainAreaPage}。该接口
- * 用于查询地图上的维保/检修区域配置，常用于客户在地图或工单系统中定位需要人工处理的区域。</p>
+ * 用于查询地图上的维保/检修区域配置，常用于调用方在地图或工单系统中定位需要人工处理的区域。</p>
  *
  * <p>{@code startTime/endTime} 在 SDK 公共 API 中使用 {@link LocalDateTime}，发送前固定格式化为
  * {@code yyyy-MM-dd HH:mm:ss}。不要改成 {@code LocalDateTime.toString()}，否则 JSON body 和签名源
@@ -35,7 +35,7 @@ public final class MaintainAreaPageRequest extends PageRequestSupport {
     /**
      * 维保区域编码过滤条件，对应平台 wire 字段 {@code maintainAreaCode}。
      *
-     * <p>字段可选，适合客户从工单、地图区域点击后精确查询某个区域。</p>
+     * <p>字段可选，适合调用方从工单、地图区域点击后精确查询某个区域。</p>
      */
     private final String maintainAreaCode;
     /**

@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
  * 路网列表查询请求。
  *
  * <p>对应 {@code POST /remoteApi/roadMapList}。该接口按四足狗编码返回
- * 该狗所在地图的路网边信息，供客户绘制可通行路线或进行选点前校验。</p>
+ * 该狗所在地图的路网边信息，供调用方绘制可通行路线或进行选点前校验。</p>
  *
  * <p>{@code dogCode} 是平台必填字段，SDK 在 {@link #toMap()} 中先做非空和去首尾空格处理，
  * 使调用方可在本地立即得到参数异常，无需等待平台返回业务错误。</p>
@@ -40,7 +40,7 @@ public final class RoadMapListRequest implements OpenApiRequest {
     /**
      * 构造发送给平台的业务请求体。
      *
-     * <p>返回 body 一定包含规范化后的 {@code dogCode}；如果客户未传或只传空白字符，
+     * <p>返回 body 一定包含规范化后的 {@code dogCode}；如果调用方未传或只传空白字符，
      * 会抛出 {@code StationOpenApiClientException}。</p>
      */
     @Override

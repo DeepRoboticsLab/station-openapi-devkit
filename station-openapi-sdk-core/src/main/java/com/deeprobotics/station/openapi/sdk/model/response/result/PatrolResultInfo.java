@@ -15,9 +15,9 @@ import java.util.List;
 public record PatrolResultInfo(
         /** 区域编码，表示巡检点所属的业务区域。 */
         String areaCode,
-        /** 区域名称，用于客户系统展示。 */
+        /** 区域名称，用于业务系统展示。 */
         String areaName,
-        /** 间隔编码，电力场景中通常表示设备间隔或巡检间隔。 */
+        /** 设备所属间隔的编码。 */
         String intervalCode,
         /** 间隔名称。 */
         String intervalName,
@@ -51,7 +51,7 @@ public record PatrolResultInfo(
         String dogCode,
         /** 巡检采集或识别时间。 */
         LocalDateTime patrolTime,
-        /** 平台处理后的巡检值，统一以字符串返回，客户可按识别类型自行转换。 */
+        /** 平台处理后的巡检值，统一以字符串返回，调用方可按识别类型自行转换。 */
         String patrolValue,
         /** 巡检值单位，例如摄氏度、百分比或平台字典单位。 */
         String patrolUnit,
@@ -109,7 +109,7 @@ public record PatrolResultInfo(
      */
     public PatrolResultInfo {
         /*
-         * 对客户暴露不可变列表，避免调用方修改反序列化结果后影响后续业务判断。
+         * 对调用方暴露不可变列表，避免调用方修改反序列化结果后影响后续业务判断。
          * 平台未返回 fileList 时统一为空列表，调用方遍历时无需额外做 null 判断。
          */
         fileList = fileList == null ? List.of() : List.copyOf(fileList);

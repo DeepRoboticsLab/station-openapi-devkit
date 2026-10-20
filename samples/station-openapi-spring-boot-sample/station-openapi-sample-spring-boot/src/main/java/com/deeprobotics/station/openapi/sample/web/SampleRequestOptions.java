@@ -13,7 +13,7 @@ public final class SampleRequestOptions {
     }
 
     /**
-     * 构建单次 SDK 调用选项，并原样透传客户请求 ID。
+     * 构建单次 SDK 调用选项；请求 ID 的首尾空白和空值处理由 SDK 完成。
      */
     public static RequestOptions from(String requestId) {
         return RequestOptions.builder().requestId(requestId).build();

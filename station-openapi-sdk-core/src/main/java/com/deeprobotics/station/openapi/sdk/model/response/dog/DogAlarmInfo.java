@@ -25,14 +25,14 @@ public record DogAlarmInfo(
          * 四足狗编码。
          *
          * <p>用于把告警记录与台账、状态、坐标等接口结果关联。
-         * 客户进行去重、过滤或跨接口关联时应优先使用该字段。</p>
+         * 调用方进行去重、过滤或跨接口关联时应优先使用该字段。</p>
          */
         String dogCode,
         /**
          * 告警发生时间。
          *
          * <p>平台按 {@code yyyy-MM-dd HH:mm:ss} 输出，
-         * SDK 的 JSON 层会解析为 {@link LocalDateTime}；该值不携带时区，客户跨时区展示时应结合平台部署时区处理。</p>
+         * SDK 的 JSON 层会解析为 {@link LocalDateTime}；该值不携带时区，调用方跨时区展示时应结合平台部署时区处理。</p>
          */
         LocalDateTime alarmTime,
         /**

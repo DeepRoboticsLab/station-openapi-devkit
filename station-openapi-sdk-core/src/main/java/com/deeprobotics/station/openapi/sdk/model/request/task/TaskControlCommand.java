@@ -48,7 +48,7 @@ public final class TaskControlCommand {
     /**
      * 包内访问的 wire code。
      *
-     * <p>只给请求 Builder 使用，避免公共 API 暴露过多内部命名；客户需要展示时可使用 {@link #toString()}。</p>
+     * <p>只给请求 Builder 使用，避免公共 API 暴露过多内部命名；调用方需要展示时可使用 {@link #toString()}。</p>
      */
     String code() {
         return code;

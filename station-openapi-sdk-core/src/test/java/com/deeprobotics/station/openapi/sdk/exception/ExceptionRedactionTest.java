@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>覆盖 JSON、header、key=value、Bearer、截断 JSON、cause 和完整 stack trace 等常见泄露入口。
  * 这些测试是安全闸门：新增异常包装或日志字符串时，必须保证 secretKey、完整 token、sign 和 password
- * 仍不会出现在客户可见文本中。</p>
+ * 仍不会出现在对外输出的文本中。</p>
  */
 class ExceptionRedactionTest {
 

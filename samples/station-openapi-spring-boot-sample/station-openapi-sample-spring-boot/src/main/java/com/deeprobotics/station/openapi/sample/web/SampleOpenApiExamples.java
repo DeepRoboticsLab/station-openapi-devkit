@@ -3,7 +3,7 @@ package com.deeprobotics.station.openapi.sample.web;
 /**
  * Swagger 中复用的双语 ProblemDetail 示例。
  *
- * <p>示例只展示稳定错误结构，不得放入客户凭证、平台原始响应体或现场设备敏感信息。</p>
+ * <p>示例只展示稳定错误结构，不得放入鉴权凭证、平台原始响应体或现场设备敏感信息。</p>
  */
 final class SampleOpenApiExamples {
 

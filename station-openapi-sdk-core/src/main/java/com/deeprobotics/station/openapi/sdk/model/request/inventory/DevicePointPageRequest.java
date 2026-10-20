@@ -18,7 +18,7 @@ public final class DevicePointPageRequest extends PageRequestSupport {
     /**
      * 巡检点编码过滤条件，对应平台 wire 字段 {@code pointCode}。
      *
-     * <p>字段可选，常用于客户从地图点位或结果明细反查指定巡检点的基础资料。</p>
+     * <p>字段可选，常用于调用方从地图点位或结果明细反查指定巡检点的基础资料。</p>
      */
     private final String pointCode;
     /**

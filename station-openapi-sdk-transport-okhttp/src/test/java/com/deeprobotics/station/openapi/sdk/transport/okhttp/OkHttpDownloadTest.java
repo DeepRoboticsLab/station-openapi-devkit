@@ -44,11 +44,11 @@ import org.junit.jupiter.api.Timeout;
  *
  * <p>下载接口和普通 JSON 接口不同：成功时是二进制流，失败时平台可能返回 JSON 错误体或其他错误页。
  * 这些测试同时覆盖 transport 直连行为和通过 {@link OpenApiExecutor} 后的异常语义，防止后续维护时
- * 把错误体写进客户文件、一次性缓存大文件，或错误设置 {@code resultUnknown}。</p>
+ * 把错误体写进下载目标文件、一次性缓存大文件，或错误设置 {@code resultUnknown}。</p>
  */
 class OkHttpDownloadTest {
 
-    /** 与生产代码保持一致的错误体上限，测试非 2xx 大响应不会被完整读入异常对象。 */
+    /** 与传输层保持一致的错误体读取上限；原始响应体不进入异常。 */
     private static final int DOWNLOAD_ERROR_BODY_LIMIT = 64 * 1024;
 
     private final ArrayList<MockWebServer> servers = new ArrayList<>();
@@ -522,7 +522,7 @@ class OkHttpDownloadTest {
 
         @Override
         public void write(int value) throws IOException {
-            // 模拟客户磁盘、网络文件系统或外部流在已经接收部分字节后失败。
+            // 模拟调用方的磁盘、网络文件系统或外部流在已经接收部分字节后失败。
             if (delegate.size() >= failAfterBytes) {
                 throw new IOException("caller output failed after partial write");
             }

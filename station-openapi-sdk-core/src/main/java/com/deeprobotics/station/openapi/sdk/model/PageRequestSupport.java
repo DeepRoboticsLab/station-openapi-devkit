@@ -21,7 +21,7 @@ public abstract class PageRequestSupport implements OpenApiRequest {
      */
     public static final int DEFAULT_PAGE_SIZE = 10;
     /**
-     * SDK 单页最大数量，防止客户误传过大 pageSize。
+     * SDK 单页最大数量，防止调用方误传过大 pageSize。
      */
     public static final int MAX_PAGE_SIZE = 100;
 
@@ -29,8 +29,8 @@ public abstract class PageRequestSupport implements OpenApiRequest {
      * 写入 SDK 统一分页字段。
      *
      * @param body 待写入分页字段的业务请求体
-     * @param pageNo 客户设置的页码，{@code null} 使用默认值
-     * @param pageSize 客户设置的每页数量，{@code null} 使用默认值
+     * @param pageNo 调用方设置的页码，{@code null} 使用默认值
+     * @param pageSize 调用方设置的每页数量，{@code null} 使用默认值
      */
     protected final void putPage(LinkedHashMap<String, Object> body, Integer pageNo, Integer pageSize) {
         Objects.requireNonNull(body, "body is required");
@@ -39,9 +39,9 @@ public abstract class PageRequestSupport implements OpenApiRequest {
     }
 
     /**
-     * pageNo 缺省为 1；小于 1 是客户输入错误，直接本地失败。
+     * pageNo 缺省为 1；小于 1 是调用方输入错误，直接本地失败。
      *
-     * @param pageNo 客户设置的页码
+     * @param pageNo 调用方设置的页码
      * @return 大于等于 1 的页码
      */
     protected final int normalizePageNo(Integer pageNo) {
@@ -57,7 +57,7 @@ public abstract class PageRequestSupport implements OpenApiRequest {
     /**
      * pageSize 缺省和非正数都归一为 10，超过 100 截断为 100。
      *
-     * @param pageSize 客户设置的每页数量
+     * @param pageSize 调用方设置的每页数量
      * @return 1 到 100 之间的分页大小
      */
     protected final int normalizePageSize(Integer pageSize) {

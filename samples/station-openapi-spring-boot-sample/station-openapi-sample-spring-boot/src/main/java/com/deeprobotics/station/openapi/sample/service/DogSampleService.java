@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 /**
  * 直接展示 {@code client.dog()} 分组的查询与控制调用。
  *
- * <p>这里不为控制操作增加自动重试，客户应结合查询结果或 MQ 状态判断现场执行情况。</p>
+ * <p>这里不为控制操作增加自动重试，调用方应结合查询结果或 MQ 状态判断现场执行情况。</p>
  */
 @Service
 public class DogSampleService {

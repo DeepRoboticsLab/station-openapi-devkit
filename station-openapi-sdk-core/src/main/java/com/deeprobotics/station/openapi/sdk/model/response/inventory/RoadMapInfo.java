@@ -50,7 +50,7 @@ public record RoadMapInfo(
          * 选点下发禁用状态。
          *
          * <p>{@code true} 表示该边不能用于 {@code dog().setPosition(...)} 选点下发；
-         * 客户仍可在地图上展示该边，但应明确标记为不可选。</p>
+         * 调用方仍可在地图上展示该边，但应明确标记为不可选。</p>
          */
         Boolean moveDisable) {
 }

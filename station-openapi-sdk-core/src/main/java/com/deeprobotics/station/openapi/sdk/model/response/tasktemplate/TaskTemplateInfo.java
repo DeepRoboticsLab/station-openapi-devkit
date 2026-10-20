@@ -123,7 +123,7 @@ public record TaskTemplateInfo(
          */
         String invalidDailyEndTime,
         /**
-         * 是否可重复下发：{@code "0"} 不可下发、{@code "1"} 可下发。
+         * 是否可下发：{@code "0"} 不可下发、{@code "1"} 可下发。
          */
         String repeatable,
         /**

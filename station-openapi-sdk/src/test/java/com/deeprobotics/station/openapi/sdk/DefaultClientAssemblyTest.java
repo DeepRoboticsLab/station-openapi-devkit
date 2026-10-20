@@ -17,9 +17,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * 从默认客户 artifact 验证公共 builder 到真实 HTTP 请求的完整装配链。
+ * 从默认 SDK 聚合模块验证公共 builder 到真实 HTTP 请求的完整装配链。
  *
- * <p>测试刻意不导入 SDK internal 类型，确保示例形态与普通客户可使用的公共 API 一致。</p>
+ * <p>测试刻意不导入 SDK internal 类型，确保示例形态与对外提供的公共 API 一致。</p>
  */
 class DefaultClientAssemblyTest {
 

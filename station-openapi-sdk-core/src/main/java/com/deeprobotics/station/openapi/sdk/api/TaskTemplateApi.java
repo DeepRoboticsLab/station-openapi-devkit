@@ -25,7 +25,7 @@ public interface TaskTemplateApi {
      * 新增任务模板但不立即下发执行。
      *
      * <p>对应 {@code POST /remoteApi/onlySaveTaskModel}，成功后返回平台生成的 {@code taskCode}。
-     * 这是业务写入操作，默认不重试。</p>
+     * 这是业务写入操作，不自动重试。</p>
      *
      * @param request 模板创建请求，必须包含任务名称和巡检点编码
      * @return 非 null 的任务模板编码 {@code taskCode}
@@ -36,8 +36,8 @@ public interface TaskTemplateApi {
     /**
      * 带单次调用选项的任务模板新增。
      *
-     * <p>{@link RequestOptions} 可用于设置 requestId 和超时。创建模板属于 BUSINESS_WRITE，默认不重试；
-     * 如果发生超时或连接中断，异常会带 {@code resultUnknown=true}，客户应先通过分页或详情接口确认是否已创建。</p>
+     * <p>{@link RequestOptions} 可用于设置 requestId 和超时。创建模板属于 BUSINESS_WRITE，不自动重试；
+     * 如果发生超时或连接中断，异常会带 {@code resultUnknown=true}，调用方应先通过分页或详情接口确认是否已创建。</p>
      *
      * @param request 模板创建请求，不能为 {@code null}
      * @param options 本次调用的 requestId 和超时等覆盖配置；传 {@code null} 时使用客户端默认配置
@@ -81,7 +81,7 @@ public interface TaskTemplateApi {
     /**
      * 带单次调用选项的任务模板删除。
      *
-     * <p>删除模板同样属于 BUSINESS_WRITE，默认不重试。网络异常后客户应先重新查询模板列表，
+     * <p>删除模板同样属于 BUSINESS_WRITE，不自动重试。网络异常后调用方应先重新查询模板列表，
      * 再决定是否补偿处理，避免对已经删除的模板重复执行写操作。</p>
      *
      * @param request 模板删除请求，不能为 {@code null}

@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
  * 路网节点列表查询请求。
  *
  * <p>对应 {@code POST /remoteApi/nodeList}。该接口按四足狗编码返回
- * 路网节点，客户可结合 {@code roadMapList} 的边信息绘制完整路线拓扑。</p>
+ * 路网节点，调用方可结合 {@code roadMapList} 的边信息绘制完整路线拓扑。</p>
  *
  * <p>{@code dogCode} 是平台必填字段，SDK 在 {@link #toMap()} 中进行本地校验和 trim，
  * 与路网边、机巢停靠点查询保持一致。</p>

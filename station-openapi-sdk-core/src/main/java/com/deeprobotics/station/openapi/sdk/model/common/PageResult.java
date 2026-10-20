@@ -17,7 +17,7 @@ import java.util.Objects;
 public final class PageResult<T> {
 
     /**
-     * 当前页记录列表。缺失时按空列表处理，避免客户侧遍历前判空。
+     * 当前页记录列表。缺失时按空列表处理，避免调用方遍历前判空。
      */
     private final List<T> records;
     /**
@@ -50,7 +50,7 @@ public final class PageResult<T> {
     public PageResult(@JsonProperty("records") List<T> records, @JsonProperty("total") Long total,
             @JsonProperty("current") Long pageNo, @JsonProperty("size") Long pageSize,
             @JsonProperty("pages") Long pages) {
-        // records 缺失时按空列表处理，客户遍历时不需要额外判空。
+        // records 缺失时按空列表处理，调用方遍历时不需要额外判空。
         this.records = records == null ? List.of() : List.copyOf(records);
         this.total = total == null ? 0L : total;
         this.pageNo = pageNo;

@@ -69,7 +69,7 @@ public final class DogAlarmPageRequest extends PageRequestSupport {
     @Override
     public LinkedHashMap<String, Object> toMap() {
         LinkedHashMap<String, Object> body = MapUtils.newBody();
-        // alarmPage 的过滤条件均可选，只有分页字段由 SDK 始终写入默认值，确保客户拿到可预期分页。
+        // alarmPage 的过滤条件均可选，只有分页字段由 SDK 始终写入默认值，确保调用方拿到可预期分页。
         MapUtils.putIfNotNull(body, "dogCode", dogCode);
         if (startTime != null) {
             body.put("startTime", DATE_TIME_FORMATTER.format(startTime));

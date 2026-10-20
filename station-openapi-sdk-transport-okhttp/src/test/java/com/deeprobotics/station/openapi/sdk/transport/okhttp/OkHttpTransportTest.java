@@ -85,7 +85,7 @@ class OkHttpTransportTest {
 
     @Test
     void readTimeoutCanBeAppliedPerRequest() throws Exception {
-        // 单次 readTimeout 用来支持客户对慢查询或下载前置接口做局部调优，不应只能依赖全局 client。
+        // 单次 readTimeout 用来支持调用方对慢查询或下载前置接口做局部调优，不应只能依赖全局 client。
         MockWebServer server = newServer();
         server.enqueue(new MockResponse()
                 .setResponseCode(200)
@@ -244,7 +244,7 @@ class OkHttpTransportTest {
         OkHttpClient customerClient = new OkHttpClient.Builder()
                 .addInterceptor(chain -> {
                     try (okhttp3.Response ignored = chain.proceed(chain.request())) {
-                        // 模拟客户通用网络栈中的透明重试拦截器：丢弃第一次响应并再次发送同一 POST。
+                        // 模拟调用方通用网络栈中的透明重试拦截器：丢弃第一次响应并再次发送同一 POST。
                     }
                     return chain.proceed(chain.request());
                 })
@@ -309,7 +309,7 @@ class OkHttpTransportTest {
 
     @Test
     void customerProvidedOkHttpClientIsNotClosedByDefault() {
-        // 客户注入的 client 可能被多个业务复用，SDK close 不能替客户关闭共享连接池。
+        // 调用方注入的 client 可能被多个业务复用，SDK close 不能替调用方关闭共享连接池。
         OkHttpClient client = new OkHttpClient.Builder().build();
         client.dispatcher().executorService();
 

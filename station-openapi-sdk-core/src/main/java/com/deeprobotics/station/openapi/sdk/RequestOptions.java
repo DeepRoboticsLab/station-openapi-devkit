@@ -21,7 +21,7 @@ public final class RequestOptions {
          */
         DEFAULT,
         /**
-         * 禁止 SDK 自动重试，适合客户自行做幂等控制或链路排障。
+         * 禁止 SDK 自动重试，适合调用方自行做幂等控制或链路排障。
          */
         NEVER
     }
@@ -48,9 +48,9 @@ public final class RequestOptions {
     }
 
     /**
-     * 返回客户请求 ID；未配置时为 {@code null}，实际调用时由 SDK 生成 UUID。仅用于追踪，不作为幂等键。
+     * 返回调用方指定的请求 ID；未配置时为 {@code null}，实际调用时由 SDK 生成 UUID。仅用于追踪，不作为幂等键。
      *
-     * @return 客户请求 ID 或 {@code null}
+     * @return 调用方指定的请求 ID 或 {@code null}
      */
     public String requestId() {
         return requestId;
@@ -66,7 +66,7 @@ public final class RequestOptions {
     }
 
     /**
-     * 返回总超时覆盖值；为 {@code null} 时，普通 JSON 调用使用 {@link StationOpenApiConfig#callTimeout()}，
+     * 返回每次 HTTP 尝试的总超时覆盖值；为 {@code null} 时，普通 JSON 调用使用 {@link StationOpenApiConfig#callTimeout()}，
      * 下载不设总时限。
      *
      * @return 调用总超时覆盖值或 {@code null}
@@ -120,7 +120,7 @@ public final class RequestOptions {
         /**
          * 设置追踪 ID，透传至 {@code X-Request-Id} 和异常上下文；不作为幂等键。
          *
-         * @param requestId 客户链路标识；null 或空白表示由 SDK 生成
+         * @param requestId 调用方的链路标识；null 或空白表示由 SDK 生成
          * @return 当前构造器
          */
         public Builder requestId(String requestId) {
@@ -140,7 +140,7 @@ public final class RequestOptions {
         }
 
         /**
-         * 覆盖本次调用总超时。
+         * 覆盖每次 HTTP 尝试的总超时；查询重试时重新计时。
          *
          * @param callTimeout 正数调用总超时；{@code null} 表示普通 JSON 调用继承客户端配置、下载不设总时限
          * @return 当前构造器
