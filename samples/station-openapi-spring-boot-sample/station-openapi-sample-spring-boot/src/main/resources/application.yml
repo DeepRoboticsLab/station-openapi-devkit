@@ -12,6 +12,7 @@ spring:
 
 station:
   openapi:
+    # 需要 http:// 开头
     endpoint: ${STATION_ENDPOINT:}
     connect-timeout: ${STATION_CONNECT_TIMEOUT:3s}
     read-timeout: ${STATION_READ_TIMEOUT:10s}
